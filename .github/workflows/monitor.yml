@@ -1,8 +1,8 @@
 name: 监控蜘蛛URL更改
 
 on:
-  workflow_dispatch: {} # 手动触发
-
+  schedule:
+    cron: '0 0 */1 * * ?' # 每天午夜执行
 jobs:
   check-URL:
     runs-on: ubuntu-latest
