@@ -1,4 +1,4 @@
-name: Monitor Spider URL Changes
+name: 监控Spider URL变化
 
 on:
   schedule:
@@ -9,22 +9,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
+    - name: 签出存储库
       uses: actions/checkout@v2
 
-    - name: Set up Node.js
+    - name: 设置 Node.js
       uses: actions/setup-node@v2
       with:
         node-version: '14'
 
-    - name: Install dependencies
+    - name: 安装依赖项
       run: npm install
 
-    - name: Get current URL content
+    - name: 获取当前URL内容
       id: get-content
       run: curl -sS https://9280.kstore.space/wex.json
 
-    - name: Store the current content
+    - name: 存储当前内容
       uses: actions/cache@v2
       with:
         path: ./current-content
@@ -32,7 +32,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-content-
 
-    - name: Check for changes
+    - name: 检查是否有变化
       id: check-changes
       run: |
         cat ./current-content
@@ -40,10 +40,10 @@ jobs:
         echo "Checking for changes..."
         prev-content=$(cat ./prev-content)
         if [ "$prev-content" != "${{ steps.get-content.outputs.stdout }}" ]; then
-          echo "Detected changes!"
+          echo "检测到的变化!"
           echo "::set-output name=changed::true"
         else
-          echo "No changes detected."
+          echo "未检测到任何变化。"
           echo "::set-output name=changed::false"
         fi
         echo
@@ -53,7 +53,7 @@ jobs:
         echo "Saving new content..."
         echo "${{ steps.get-content.outputs.stdout }}" > ./prev-content
 
-    - name: Notify on changes
+    - name: 通知变更
       if: steps.check-changes.outputs.changed == 'true'
       uses: actions/github-script@v3
       with:
