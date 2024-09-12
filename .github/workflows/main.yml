@@ -1,0 +1,60 @@
+name: 更新 Spider
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: '11 20 * * *'
+
+jobs:
+  update-spider:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: 检出仓库
+        uses: actions/checkout@v2
+        description: '检出存储库到运行器的工作空间。'
+
+      # Step 2: Setup Python
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+        description: '设置 Python 环境，并安装指定版本的 Python。'
+
+      # Step 3: Install necessary dependencies
+      - name: 安装依赖项
+        run: python -m pip install requests
+        description: '安装工作流程所需的 Python 依赖项，这里使用 requests 库。'
+
+      # Step 4: Get Spider URL and set environment variable
+      - name: 获取 Spider 字段并设置环境变量
+        run: |
+          SPIDER_URL=$(python -c "import requests; print(requests.get('https://9280.kstore.space/wex.json').json()['spider'])")
+          echo "SPIDER_URL=$SPIDER_URL" >> $GITHUB_ENV
+        description: '从外部 URL 获取 Spider 字段，并将其保存为环境变量以便后续使用。'
+
+      # Step 5: Update Spider Field and upload to Kstore
+      - name: 更新 Spider 字段并上传到 Kstore
+        env:
+          KSTORE_API_TOKEN: ${{ secrets.KSTORE_TOKEN }}
+          KSTORE_FOLDER_ID: ${{ secrets.KSTORE_ID }}
+          WEX_JSON_URL: ${{ secrets.WEX_JSON }}
+        run: |
+          # 获取现有数据
+          response=$(curl -s ${{ env.WEX_JSON }})
+          
+          # 使用新值更新 'spider' 字段
+          updated_data=$(echo $response | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${{ env.SPIDER_URL }}'; print(json.dumps(data))")
+
+          # 将更新后的数据保存到文件中
+          cd ${{ github.workspace }}
+          file="wex.json"
+          echo "$updated_data" > $file
+        
+          # 将更新后的文件上传到 Kstore
+          curl -F "file=@$file" "https://upload.kstore.space/upload/${{ env.KSTORE_FOLDER_ID }}?access_token=${{ env.KSTORE_API_TOKEN }}"
+        description: '更新 JSON 数据中的 Spider 字段，并将更新后的文件上传到 Kstore。'
