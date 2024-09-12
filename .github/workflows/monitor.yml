@@ -1,0 +1,73 @@
+name: Monitor Spider URL Changes
+
+on:
+  schedule:
+    cron: '0 0 * * *' # 每天午夜执行
+
+jobs:
+  check-url:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Get current URL content
+      id: get-content
+      run: curl -sS https://9280.kstore.space/wex.json
+
+    - name: Store the current content
+      uses: actions/cache@v2
+      with:
+        path: ./current-content
+        key: ${{ runner.os }}-content-${{ hashFiles('**/current-content*') }}
+        restore-keys: |
+          ${{ runner.os }}-content-
+
+    - name: Check for changes
+      id: check-changes
+      run: |
+        cat ./current-content
+        echo
+        echo "Checking for changes..."
+        prev-content=$(cat ./prev-content)
+        if [ "$prev-content" != "${{ steps.get-content.outputs.stdout }}" ]; then
+          echo "Detected changes!"
+          echo "::set-output name=changed::true"
+        else
+          echo "No changes detected."
+          echo "::set-output name=changed::false"
+        fi
+        echo
+        echo "$prev-content"
+        echo "${{ steps.get-content.outputs.stdout }}"
+        echo
+        echo "Saving new content..."
+        echo "${{ steps.get-content.outputs.stdout }}" > ./prev-content
+
+    - name: Notify on changes
+      if: steps.check-changes.outputs.changed == 'true'
+      uses: actions/github-script@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          with({{ github.repository }} as repo, {{ github.actor }} as actor, {{ github.event_name }} as eventName) {
+            const branch = 'monitor';
+            const message = `Detected changes in spider URL at ${new Date().toISOString()}`;
+            github.createPullRequest({
+              owner: actor,
+              repo: repo,
+              title: `Changes detected in spider URL - ${eventName}`,
+              body: message,
+              head: branch,
+              base: 'main'
+            });
+          }
