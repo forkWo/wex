@@ -38,7 +38,7 @@ jobs:
         env:
           KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
           KSTORE_ID: ${{ secrets.KSTORE_ID }}
-          WEX_JSON_URL: ${{ secrets.WEX_JSON }}
+          WEX_JSON: ${{ secrets.WEX_JSON }}
         run: |
           # Fetch existing data
           response=$(curl -s ${{ env.WEX_JSON }})
