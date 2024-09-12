@@ -4,7 +4,7 @@ on:
   workflow_dispatch: {} # 手动触发
 
 jobs:
-  检查URL:
+  check-URL:
     runs-on: ubuntu-latest
 
     steps:
@@ -56,7 +56,7 @@ jobs:
       if: steps.check-changes.outputs.changed == 'true'
       uses: actions/github-script@v3
       with:
-        token: ${{ secrets.PAT }}
+        token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           with({{ github.repository }} as repo, {{ github.actor }} as actor, {{ github.event_name }} as eventName) {
             const branch = 'monitor';
