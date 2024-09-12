@@ -1,27 +1,27 @@
-name: Monitor Spider URL Changes
+name: 监控 Spider URL 变化
 
 on:
   schedule:
     cron: '0 0 * * *' # 每天午夜执行
 
 jobs:
-  check-url:
+  检查-URL:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 签出存储库
+    - name: 检出仓库
       uses: actions/checkout@v2
 
-    - name: 设置 Node.js
+    - name: 设置 Node.js 环境
       uses: actions/setup-node@v2
       with:
         node-version: '14'
 
-    - name: 安装依赖项
+    - name: 安装依赖
       run: npm install
 
-    - name: 获取当前URL内容
-      id: get-content
+    - name: 获取当前 URL 内容
+      id: 获取内容
       run: curl -sS https://9280.kstore.space/wex.json
 
     - name: 存储当前内容
@@ -32,40 +32,40 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-content-
 
-    - name: 检查是否有变化
-      id: check-changes
+    - name: 检查变化
+      id: 检查变化
       run: |
         cat ./current-content
         echo
-        echo "Checking for changes..."
+        echo "检查变化..."
         prev-content=$(cat ./prev-content)
-        if [ "$prev-content" != "${{ steps.get-content.outputs.stdout }}" ]; then
-          echo "检测到的变化!"
+        if [ "$prev-content" != "${{ steps.获取内容.outputs.stdout }}" ]; then
+          echo "检测到变化！"
           echo "::set-output name=changed::true"
         else
-          echo "未检测到任何变化。"
+          echo "没有检测到变化。"
           echo "::set-output name=changed::false"
         fi
         echo
         echo "$prev-content"
-        echo "${{ steps.get-content.outputs.stdout }}"
+        echo "${{ steps.获取内容.outputs.stdout }}"
         echo
-        echo "Saving new content..."
-        echo "${{ steps.get-content.outputs.stdout }}" > ./prev-content
+        echo "保存新内容..."
+        echo "${{ steps.获取内容.outputs.stdout }}" > ./prev-content
 
-    - name: 通知变更
-      if: steps.check-changes.outputs.changed == 'true'
+    - name: 通知变化
+      if: steps.检查变化.outputs.changed == 'true'
       uses: actions/github-script@v3
       with:
         token: ${{ secrets.PAT }}
         script: |
           with({{ github.repository }} as repo, {{ github.actor }} as actor, {{ github.event_name }} as eventName) {
             const branch = 'monitor';
-            const message = `Detected changes in spider URL at ${new Date().toISOString()}`;
+            const message = `检测到 spider URL 变化于 ${new Date().toISOString()}`;
             github.createPullRequest({
               owner: actor,
               repo: repo,
-              title: `Changes detected in spider URL - ${eventName}`,
+              title: `检测到 spider URL 变化 - ${eventName}`,
               body: message,
               head: branch,
               base: 'main'
