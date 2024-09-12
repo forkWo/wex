@@ -1,7 +1,9 @@
 name: 监控 Spider URL 变化
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch: {} # 手动触发
+  schedule:
+    cron: '0 0 * * *' # 每天午夜执行
 
 jobs:
   检查-URL:
@@ -22,8 +24,7 @@ jobs:
     - name: 获取当前 URL 内容
       id: 获取内容
       run: curl -sS https://9280.kstore.space/wex.json
-      outputs:
-        stdout: ${{ steps.获取内容.outputs.stdout }}
+      # 不需要在这里定义 outputs
 
     - name: 存储当前内容
       uses: actions/cache@v2
@@ -36,12 +37,9 @@ jobs:
     - name: 检查变化
       id: 检查变化
       run: |
-        cat ./current-content
-        echo
-        echo "检查变化..."
-        prev-content=$(cat ./prev-content)
-        current-content="${{ steps.获取内容.outputs.stdout }}"
-        if [ "$prev-content" != "$current-content" ]; then
+        prev_content="${{ steps.获取内容.outputs.stdout }}"
+        current_content="${{ steps.获取内容.outputs.stdout }}"
+        if [ "$prev_content" != "$current_content" ]; then
           echo "检测到变化！"
           echo "::set-output name=changed::true"
         else
@@ -49,17 +47,17 @@ jobs:
           echo "::set-output name=changed::false"
         fi
         echo
-        echo "$prev-content"
-        echo "$current-content"
+        echo "$prev_content"
+        echo "$current_content"
         echo
         echo "保存新内容..."
-        echo "$current-content" > ./prev-content
+        echo "$current_content" > ./current-content
 
     - name: 通知变化
       if: steps.检查变化.outputs.changed == 'true'
       uses: actions/github-script@v3
       with:
-        token: ${{ secrets.PAT }}
+        token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           with({{ github.repository }} as repo, {{ github.actor }} as actor, {{ github.event_name }} as eventName) {
             const branch = 'monitor';
