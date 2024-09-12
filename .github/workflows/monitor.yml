@@ -1,4 +1,4 @@
-name: 监控Spider URL变化
+name:监控Spider URL变化
 
 on:
   schedule:
