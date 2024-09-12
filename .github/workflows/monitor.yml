@@ -6,72 +6,72 @@ on:
       - main
   workflow_dispatch:
   schedule:
-    - cron: '0 0 */1 * * ?'
+    - cron: '0 * * * * ?'
 
 jobs:
   check-URL:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 检出仓库
-      uses: actions/checkout@v2
+      - name: 检出仓库
+        uses: actions/checkout@v2
 
-    - name: 设置Node.js环境
-      uses: actions/setup-node@v2
-      with:
-        node-version: '14'
+      - name: 设置Node.js环境
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
 
-    - name: 安装依赖项
-      run: npm install
+      - name: 安装依赖项
+        run: npm install
 
-    - name: 获取当前URL内容
-      id: get-content
-      run: curl -sS https://9280.kstore.space/wex.json
+      - name: 获取当前URL内容
+        id: get-content
+        run: curl -sS https://9280.kstore.space/wex.json
 
-    - name: 存储当前内容
-      uses: actions/cache@v2
-      with:
-        path: ./current-content
-        key: ${{ runner.os }}-content-${{ hashFiles('**/current-content*') }}
-        restore-keys: |
-          ${{ runner.os }}-content-
+      - name: 存储当前内容
+        uses: actions/cache@v2
+        with:
+          path: ./current-content
+          key: ${{ runner.os }}-content-${{ hashFiles('**/current-content*') }}
+          restore-keys: |
+            ${{ runner.os }}-content-
 
-    - name: 检查更改
-      id: check-changes
-      run: |
-        cat ./current-content
-        echo
-        echo "检查更改..."
-        prev-content=$(cat ./prev-content)
-        if [ "$prev-content" != "${{ steps.get-content.outputs.stdout }}" ]; then
-          echo "检测到更改！"
-          echo "::set-output name=changed::true"
-        else
-          echo "未检测到更改。"
-          echo "::set-output name=changed::false"
-        fi
-        echo
-        echo "$prev-content"
-        echo "${{ steps.get-content.outputs.stdout }}"
-        echo
-        echo "保存新内容..."
-        echo "${{ steps.get-content.outputs.stdout }}" > ./prev-content
+      - name: 检查更改
+        id: check-changes
+        run: |
+          cat ./current-content
+          echo
+          echo "检查更改..."
+          prev-content=$(cat ./prev-content)
+          if [ "$prev-content" != "${{ steps.get-content.outputs.stdout }}" ]; then
+            echo "检测到更改！"
+            echo "::set-output name=changed::true"
+          else
+            echo "未检测到更改。"
+            echo "::set-output name=changed::false"
+          fi
+          echo
+          echo "$prev-content"
+          echo "${{ steps.get-content.outputs.stdout }}"
+          echo
+          echo "保存新内容..."
+          echo "${{ steps.get-content.outputs.stdout }}" > ./prev-content
 
-    - name: 通知更改
-      if: steps.check-changes.outputs.changed == 'true'
-      uses: actions/github-script@v3
-      with:
-        token: ${{ secrets.PAT }}
-        script: |
-          with({{ github.repository }} as repo, {{ github.actor }} as actor, {{ github.event_name }} as eventName) {
-            const branch = 'monitor';
-            const message = `在 ${new Date().toISOString()} 检测到蜘蛛URL的更改`;
-            github.createPullRequest({
-              owner: actor,
-              repo: repo,
-              title: `检测到蜘蛛URL更改 - ${eventName}`,
-              body: message,
-              head: branch,
-              base: 'main'
-            });
-          }
+      - name: 通知更改
+        if: steps.check-changes.outputs.changed == 'true'
+        uses: actions/github-script@v3
+        with:
+          token: ${{ secrets.PAT }}
+          script: |
+            with({{ github.repository }} as repo, {{ github.actor }} as actor, {{ github.event_name }} as eventName) {
+              const branch = 'monitor';
+              const message = `在 ${new Date().toISOString()} 检测到蜘蛛URL的更改`;
+              github.createPullRequest({
+                owner: actor,
+                repo: repo,
+                title: `检测到蜘蛛URL更改 - ${eventName}`,
+                body: message,
+                head: branch,
+                base: 'main'
+              });
+            }
