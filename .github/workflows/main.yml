@@ -6,7 +6,7 @@ on:
       - main
   workflow_dispatch:
   schedule:
-    - cron: '11 20 * * *'
+    - cron: '* * * * *'
 
 jobs:
   update-spider:
