@@ -20,7 +20,7 @@ jobs:
         run: |
           runs_to_delete=$(curl -s -H "Authorization: token $PAT" \
             https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }} \
-            | jq -r '.workflow_runs | map(select(.status == "completed")) | .[6:] | .[].id')
+            | jq -r '.workflow_runs | map(select(.status == "completed")) | .[0:] | .[].id')
 
           for run_id in $runs_to_delete; do
             echo "Deleting run $run_id"
@@ -84,12 +84,12 @@ jobs:
           # Fetch existing data
           response=$(curl -s ${{ env.WEX_JSON }})
           
-          # Update the 'spider' field with the new value
-          updated_data=$(echo $response | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${{ env.SPIDER_URL }}'; print(json.dumps(data))")
+          # Update only the 'spider' field with the new value
+          updated_data=$(echo $response | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${{ env.SPIDER_URL }}'; print(json.dumps(data, ensure_ascii=False))")
 
           # Save updated data to spider.json
           cd ${{ github.workspace }}
-          echo "$updated_data" > spider.json
+          echo "$updated_data" | jq '.spider = $ENV.SPIDER_URL' > spider.json
           
           # Upload the updated spider.json to Kstore
           curl -F "file=@spider.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN2 }}"
