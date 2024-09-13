@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 0: Delete previous runs
+      # Step 0: 删除之前的任务流
       - name: 删除之前的任务流
         env:
           PAT: ${{ secrets.PAT }}
@@ -28,74 +28,73 @@ jobs:
             https://api.github.com/repos/${{ github.repository }}/actions/runs/$run_id
           done
 
-      # Step 1: Checkout the repository
+      # Step 1: 查看 repository
       - name: 查看 repository
         uses: actions/checkout@v2
 
-      # Step 2: Setup Python
+      # Step 2: 设置 Python 环境
       - name: 设置 Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
 
-      # Step 3: Install necessary dependencies
+      # Step 3: 安装依赖项
       - name: 安装 Dependencies
-        run: python -m pip install requests
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      # Step 4: Get Spider URL and set environment variable
+      # Step 4: 获取 Spider URL 并设置环境变量
       - name: 获取 Spider 字段
         run: |
           SPIDER_URL=$(python -c "import requests; print(requests.get('https://9280.kstore.space/wex.json').json()['spider'])")
           echo "SPIDER_URL=$SPIDER_URL" >> $GITHUB_ENV
 
-      # Step 4.5: Compare with existing Spider URL
+      # Step 5: 比较现有 Spider URL
       - name: 对比现有 Spider URL
+        id: compare-urls
         env:
           SPIDER_JSON: ${{ secrets.SPIDER_JSON }}
         run: |
-          # 获取现有的 Spider URL
           EXISTING_SPIDER_URL=$(python -c "import requests; print(requests.get('${{ env.SPIDER_JSON }}').json()['spider'].strip())")
-          
-          # 去除新获取的 Spider URL 中的换行符和空格
           SPIDER_URL=$(echo $SPIDER_URL | tr -d '\n' | tr -d ' ')
           EXISTING_SPIDER_URL=$(echo $EXISTING_SPIDER_URL | tr -d '\n' | tr -d ' ')
           
-          # 输出两者以调试
-          echo "New SPIDER_URL: $SPIDER_URL"
-          echo "Existing SPIDER_URL: $EXISTING_SPIDER_URL"
-          
-          # 比较两者
           if [ "$SPIDER_URL" = "$EXISTING_SPIDER_URL" ]; then
-            echo "Spider URL 是一样的。停止脚本."
-            exit 0
+            echo "continue=false" >> $GITHUB_ENV
           else
-            echo "Spider URL 是不同的。继续脚本."
-          fi
+            echo "continue=true" >> $GITHUB_ENV
 
-      # Step 5: Update Spider Field and upload to Kstore
+      # Step 6: 更新 Spider 字段并上传 Kstore
       - name: 更新 Spider 字段、并上传 Kstore
-        if: ${{ steps.compare-urls.outputs.continue }}
+        if: env.continue == 'true'
         env:
           KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
           KSTORE_TOKEN2: ${{ secrets.KSTORE_TOKEN2 }}
           KSTORE_ID: ${{ secrets.KSTORE_ID }}
           WEX_JSON: ${{ secrets.WEX_JSON }}
         run: |
-          # Fetch existing data
           response=$(curl -s ${{ env.WEX_JSON }})
-          
-          # Update only the 'spider' field with the new value
-          updated_data=$(echo $response | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${{ env.SPIDER_URL }}'; print(json.dumps(data, ensure_ascii=False))")
-
-          # Save updated data to spider.json
-          cd ${{ github.workspace }}
+          updated_data=$(echo "$response" | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${SPIDER_URL}'; print(json.dumps(data, ensure_ascii=False))")
           echo "$updated_data" > spider.json
-          
-          # Upload the updated spider.json to Kstore
           curl -F "file=@spider.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN2 }}"
-
-          # Save updated data to wex.json
           echo "$updated_data" > wex.json
-          
-          # Upload the updated wex.json to Kstore
-          curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}
+          curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
+
+      # Step 7: 等待下一个预定时间（仅在 push 触发时）
+      - name: 等待下一个预定时间
+        if: startsWith(github.ref_name, 'refs/heads/main') && workflow.event_name != 'schedule'
+        run: |
+          current_time=$(date +%H:%M)
+          next_run_time=$(date -d '1 hour' +%H:%M)
+          wait_time=$(( (next_run_time - current_time) * 60 ))
+
+          if [ "$current_time" == "$next_run_time" ]; then
+            wait_time=60
+          fi
+
+          echo "当前时间: $current_time"
+          echo "下一个预定运行时间: $next_run_time"
+          echo "等待时间: $wait_time 分钟"
+
+          sleep $wait_time
