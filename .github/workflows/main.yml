@@ -33,10 +33,24 @@ jobs:
           SPIDER_URL=$(python -c "import requests; print(requests.get('https://9280.kstore.space/wex.json').json()['spider'])")
           echo "SPIDER_URL=$SPIDER_URL" >> $GITHUB_ENV
 
+      # Step 4.5: Compare with existing Spider URL
+      - name: 对比现有 Spider URL
+        env:
+          SPIDER_JSON: ${{ secrets.SPIDERR_JSON }}
+        run: |
+          EXISTING_SPIDER_URL=$(python -c "import requests; print(requests.get('${{ env.SPIDER_JSON }}').json()['spider'])")
+          if [ "$SPIDER_URL" = "$EXISTING_SPIDER_URL" ]; then
+            echo "Spider URL 是一样的。停止脚本."
+            exit 0
+          else
+            echo "Spider URL 是不同的。继续脚本."
+          fi
+
       # Step 5: Update Spider Field and upload to Kstore
       - name: 更新 Spider 字段、并上传 Kstore
         env:
           KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
+          KSTORE_TOKEN2: ${{ secrets.KSTORE_TOKEN2 }}
           KSTORE_ID: ${{ secrets.KSTORE_ID }}
           WEX_JSON: ${{ secrets.WEX_JSON }}
         run: |
@@ -46,10 +60,15 @@ jobs:
           # Update the 'spider' field with the new value
           updated_data=$(echo $response | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${{ env.SPIDER_URL }}'; print(json.dumps(data))")
 
-          # Save updated data to a file
+          # Save updated data to spider.json
           cd ${{ github.workspace }}
-          file="wex.json"
-          echo "$updated_data" > $file
+          echo "$updated_data" > spider.json
           
-          # Upload the updated file to Kstore
-          curl -F "file=@$file" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
+          # Upload the updated spider.json to Kstore
+          curl -F "file=@spider.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN2 }}"
+
+          # Save updated data to wex.json
+          echo "$updated_data" > wex.json
+          
+          # Upload the updated wex.json to Kstore
+          curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
