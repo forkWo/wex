@@ -13,14 +13,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 0: Delete previous runs, keeping the latest 10
-      - name: 删除之前的任务流，保留最近10个
+      # Step 0: Delete previous runs
+      - name: 删除之前的任务流
         env:
           PAT: ${{ secrets.PAT }}
         run: |
           runs_to_delete=$(curl -s -H "Authorization: token $PAT" \
             https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }} \
-            | jq -r '.workflow_runs | map(select(.status == "completed")) | .[10:] | .[].id')
+            | jq -r '.workflow_runs | map(select(.status == "completed")) | .[6:] | .[].id')
 
           for run_id in $runs_to_delete; do
             echo "Deleting run $run_id"
