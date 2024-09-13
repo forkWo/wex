@@ -38,10 +38,6 @@ jobs:
         with:
           python-version: '3.x'
 
-      # Step 2.5: Install jq
-      - name: 安装 jq
-        run: sudo apt-get install -y jq
-
       # Step 3: Install necessary dependencies
       - name: 安装 Dependencies
         run: python -m pip install requests
@@ -95,7 +91,7 @@ jobs:
 
           # Save updated data to spider.json
           cd ${{ github.workspace }}
-          echo "$updated_data" | jq '.spider = $ENV.SPIDER_URL' > spider.json
+          echo "$updated_data" > spider.json
           
           # Upload the updated spider.json to Kstore
           curl -F "file=@spider.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN2 }}"
