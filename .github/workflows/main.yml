@@ -20,7 +20,7 @@ jobs:
         run: |
           runs_to_delete=$(curl -s -H "Authorization: token $PAT" \
             https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }} \
-            | jq -r '.workflow_runs | map(select(.status == "completed")) | .[10:] | .[].id')
+            | jq -r '.workflow_runs | map(select(.status == "completed")) | .[1:] | .[].id')
 
           for run_id in $runs_to_delete; do
             echo "Deleting run $run_id"
@@ -37,6 +37,10 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
+
+      # Step 2.5: Install jq
+      - name: 安装 jq
+        run: sudo apt-get install -y jq
 
       # Step 3: Install necessary dependencies
       - name: 安装 Dependencies
