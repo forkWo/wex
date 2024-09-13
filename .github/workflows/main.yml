@@ -6,13 +6,28 @@ on:
       - main
   workflow_dispatch:
   schedule:
-    - cron: '* * * * *'
+    - cron: '0 * * * *'  # 每小时执行一次
 
 jobs:
   update-spider:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 0: Delete previous runs, keeping the latest 10
+      - name: 删除之前的任务流，保留最近10个
+        env:
+          PAT: ${{ secrets.PAT }}
+        run: |
+          runs_to_delete=$(curl -s -H "Authorization: token $PAT" \
+            https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }} \
+            | jq -r '.workflow_runs | map(select(.status == "completed")) | .[10:] | .[].id')
+
+          for run_id in $runs_to_delete; do
+            echo "Deleting run $run_id"
+            curl -X DELETE -H "Authorization: token $PAT" \
+            https://api.github.com/repos/${{ github.repository }}/actions/runs/$run_id
+          done
+
       # Step 1: Checkout the repository
       - name: 查看 repository
         uses: actions/checkout@v2
