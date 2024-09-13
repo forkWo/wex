@@ -38,7 +38,18 @@ jobs:
         env:
           SPIDER_JSON: ${{ secrets.SPIDER_JSON }}
         run: |
-          EXISTING_SPIDER_URL=$(python -c "import requests; print(requests.get('${{ env.SPIDER_JSON }}').json()['spider'])")
+          # 获取现有的 Spider URL
+          EXISTING_SPIDER_URL=$(python -c "import requests; print(requests.get('${{ env.SPIDER_JSON }}').json()['spider'].strip())")
+          
+          # 去除新获取的 Spider URL 中的换行符和空格
+          SPIDER_URL=$(echo $SPIDER_URL | tr -d '\n' | tr -d ' ')
+          EXISTING_SPIDER_URL=$(echo $EXISTING_SPIDER_URL | tr -d '\n' | tr -d ' ')
+          
+          # 输出两者以调试
+          echo "New SPIDER_URL: $SPIDER_URL"
+          echo "Existing SPIDER_URL: $EXISTING_SPIDER_URL"
+          
+          # 比较两者
           if [ "$SPIDER_URL" = "$EXISTING_SPIDER_URL" ]; then
             echo "Spider URL 是一样的。停止脚本."
             exit 0
@@ -48,6 +59,7 @@ jobs:
 
       # Step 5: Update Spider Field and upload to Kstore
       - name: 更新 Spider 字段、并上传 Kstore
+        if: ${{ steps.compare-urls.outputs.continue }}
         env:
           KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
           KSTORE_TOKEN2: ${{ secrets.KSTORE_TOKEN2 }}
@@ -71,4 +83,4 @@ jobs:
           echo "$updated_data" > wex.json
           
           # Upload the updated wex.json to Kstore
-          curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
+          curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}
