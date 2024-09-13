@@ -20,7 +20,7 @@ jobs:
         run: |
           runs_to_delete=$(curl -s -H "Authorization: token $PAT" \
             https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }} \
-            | jq -r '.workflow_runs | map(select(.status == "completed")) | .[0:] | .[].id')
+            | jq -r '.workflow_runs | map(select(.status == "completed")) | .[10:] | .[].id')
 
           for run_id in $runs_to_delete; do
             echo "Deleting run $run_id"
@@ -50,6 +50,7 @@ jobs:
 
       # Step 4.5: Compare with existing Spider URL
       - name: 对比现有 Spider URL
+        id: compare-urls
         env:
           SPIDER_JSON: ${{ secrets.SPIDER_JSON }}
         run: |
@@ -67,14 +68,15 @@ jobs:
           # 比较两者
           if [ "$SPIDER_URL" = "$EXISTING_SPIDER_URL" ]; then
             echo "Spider URL 是一样的。停止脚本."
-            exit 0
+            echo "continue=false" >> $GITHUB_ENV
           else
             echo "Spider URL 是不同的。继续脚本."
+            echo "continue=true" >> $GITHUB_ENV
           fi
 
       # Step 5: Update Spider Field and upload to Kstore
       - name: 更新 Spider 字段、并上传 Kstore
-        if: ${{ steps.compare-urls.outputs.continue }}
+        if: env.continue == 'true'
         env:
           KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
           KSTORE_TOKEN2: ${{ secrets.KSTORE_TOKEN2 }}
