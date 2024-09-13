@@ -36,7 +36,7 @@ jobs:
       # Step 4.5: Compare with existing Spider URL
       - name: 对比现有 Spider URL
         env:
-          SPIDER_JSON: ${{ secrets.SPIDERR_JSON }}
+          SPIDER_JSON: ${{ secrets.SPIDER_JSON }}
         run: |
           EXISTING_SPIDER_URL=$(python -c "import requests; print(requests.get('${{ env.SPIDER_JSON }}').json()['spider'])")
           if [ "$SPIDER_URL" = "$EXISTING_SPIDER_URL" ]; then
