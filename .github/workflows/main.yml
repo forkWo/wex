@@ -14,7 +14,7 @@ jobs:
 
     steps:
       # Step 0: Delete previous runs
-      - name: 删除之前的任务流
+      - name: 删除任务流
         env:
           PAT: ${{ secrets.PAT }}
         run: |
@@ -68,10 +68,10 @@ jobs:
           # 比较两者
           if [ "$SPIDER_URL" = "$EXISTING_SPIDER_URL" ]; then
             echo "continue=false" >> $GITHUB_ENV
-            echo "Spider URL 是一样的。停止脚本."
+            echo "对比结果一致。停止脚本."
           else
             echo "continue=true" >> $GITHUB_ENV
-            echo "Spider URL 是不同的。继续脚本."
+            echo "对比结果不同。继续脚本."
           fi
 
       # Step 5: Update Spider Field and upload to Kstore
