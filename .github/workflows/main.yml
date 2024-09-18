@@ -20,7 +20,7 @@ jobs:
         run: |
           runs_to_delete=$(curl -s -H "Authorization: token $PAT" \
             https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }} \
-            | jq -r '.workflow_runs | map(select(.status == "completed")) | .[10:] | .[].id')
+            | jq -r '.workflow_runs | map(select(.status == "completed")) | .[23:] | .[].id')
 
           for run_id in $runs_to_delete; do
             echo "Deleting run $run_id"
