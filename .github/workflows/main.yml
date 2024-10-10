@@ -6,7 +6,7 @@ on:
       - main
   workflow_dispatch:
   schedule:
-    - cron: '0 */1 * * *'  # 每小时执行一次
+#    - cron: '0 */1 * * *'  # 每小时执行一次
 
 jobs:
   update-spider:
