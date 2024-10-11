@@ -101,3 +101,22 @@ jobs:
           
           # Upload the updated wex.json to Kstore
           curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
+                
+      # Step 6: Send email notification
+      - name: 发送邮箱通知
+        if: env.continue == 'true'
+        env:
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        run: |
+          echo "Spider URL has been updated to $SPIDER_URL" | mailx -v \
+            -s "Spider Update Notification" \
+            -r "$EMAIL_FROM" \
+            -S smtp="smtp://$SMTP_SERVER" \
+            -S smtp-auth=login \
+            -S smtp-auth-user="$SMTP_USERNAME" \
+            -S smtp-auth-password="$SMTP_PASSWORD" \
+            "$EMAIL_TO"
