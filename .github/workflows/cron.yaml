@@ -88,6 +88,10 @@ jobs:
           curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
 
       # Step 6: Send email notification
+      - name: 安装 mailx
+        if: env.continue == 'true'
+        run: sudo apt-get install -y mailutils
+
       - name: 发送邮件通知
         if: env.continue == 'true'
         env:
@@ -97,7 +101,7 @@ jobs:
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         run: |
-          echo "Spider URL has been updated to $SPIDER_URL" | mailx -v \
+          echo "Spider URL has been updated to $SPIDER_URL" | mailx \
             -s "Spider Update Notification" \
             -r "$EMAIL_FROM" \
             -S smtp="smtp://$SMTP_SERVER" \
