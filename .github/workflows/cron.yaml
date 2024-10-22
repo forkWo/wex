@@ -3,7 +3,7 @@ name: 更新 Spider
 on:
   push:
     branches:
-      - main
+      - cron
   workflow_dispatch:
   schedule:
     - cron: '*/55 * * * *'  # 每55分钟执行一次
