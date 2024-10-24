@@ -13,11 +13,19 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: 删除之前的运行
-        uses: geekyeggo/delete-previous-runs@v1
-        with:
-          GIT_KEY: ${{ secrets.GIT_KEY }}
-          keep_minimum_runs: 24 
+      - name: 删除任务流
+        env:
+          PAT: ${{ secrets.PAT }}
+        run: |
+          runs_to_delete=$(curl -s -H "Authorization: token $PAT" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }}" \
+            | jq -r '.workflow_runs | map(select(.status == "completed")) | .[23:] | .[].id')
+
+          for run_id in $runs_to_delete; do
+            echo "Deleting run $run_id"
+            curl -X DELETE -H "Authorization: token $PAT" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/$run_id"
+          done
 
       - name: 检出代码库
         uses: actions/checkout@v2
