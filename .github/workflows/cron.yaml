@@ -6,7 +6,7 @@ on:
       - wex
   workflow_dispatch:
   schedule:
-    - cron: '*/45 * * * *'  # 每45分钟执行一次
+    - cron: '*/50 * * * *'  # 每50分钟执行一次
 
 jobs:
   update-spider:
@@ -87,22 +87,12 @@ jobs:
           echo "$updated_data" > wex.json
           curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
           
-          # 将 updated_data 设置为环境变量，供下一步使用
-          echo "UPDATED_DATA<<EOF" >> $GITHUB_ENV
-          echo "$updated_data" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      # Step 6: Create GitHub Release
       - name: 创建 GitHub Release
         if: env.continue == 'true'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: 'spider-update-${{ github.run_number }}'
-          name: 'Spider 更新 - ${{ github.event.schedule && github.event.schedule[0].schedule || format('UTC %Y-%m-%d %H:%M', github.event.schedule && github.event.schedule[0].at || github.event.pull_request.merged_at || github.event.push.pushed_at) }}'
-          body: |
-            ## 更新的 Spider 字段:
-            ```
-            ${{ env.UPDATED_DATA }}
-            ```
+          name: 'Spider 更新 - ${{ github.run_number }}' 
+          body: '已更新 Spider 字段'
         env:
           GIT_KEY: ${{ secrets.GIT_KEY }}
