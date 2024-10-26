@@ -96,7 +96,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: 'spider-update-${{ github.run_number }}'
-          name: 'Spider 更新 - ${{ github.run_number }}' 
+          name: 'Spider 更新 - ${{ github.event.schedule && github.event.schedule[0].schedule || format('UTC %Y-%m-%d %H:%M', github.event.schedule && github.event.schedule[0].at || github.event.pull_request.merged_at || github.event.push.pushed_at) }}' 
           body: |
             ## 更新的 Spider 字段:
             ```
