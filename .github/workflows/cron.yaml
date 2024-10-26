@@ -44,10 +44,11 @@ jobs:
 
       # Step 4: Get Spider URL and set environment variable
       - name: 获取 Spider 字段
-        id: get-spider-url
+        id: get-spider-url  # 添加 id，方便后续引用输出
         run: |
           SPIDER_URL=$(python -c "import requests; print(requests.get('https://9280.kstore.space/wex.json').json()['spider'])")
           echo "SPIDER_URL=$SPIDER_URL" >> $GITHUB_ENV
+          echo "::set-output name=spider_url::$SPIDER_URL"  # 设置输出
 
       # Step 4.5: Compare with existing Spider URL
       - name: 对比现有 Spider URL
@@ -56,12 +57,13 @@ jobs:
           SPIDER_JSON: ${{ secrets.SPIDER_JSON }}
         run: |
           EXISTING_SPIDER_URL=$(python -c "import requests; print(requests.get('${{ env.SPIDER_JSON }}').json()['spider'].strip())")
-          SPIDER_URL=$(echo ${{ steps.get-spider-url.outputs.SPIDER_URL }} | tr -d '\n' | tr -d ' ')
+          # 使用 steps.<step_id>.outputs.<output_name> 获取输出
+          SPIDER_URL=${{ steps.get-spider-url.outputs.spider_url }} 
           EXISTING_SPIDER_URL=$(echo $EXISTING_SPIDER_URL | tr -d '\n' | tr -d ' ')
 
           echo "New SPIDER_URL: $SPIDER_URL"
           echo "Existing SPIDER_URL: $EXISTING_SPIDER_URL"
-          
+
           if [ "$SPIDER_URL" = "$EXISTING_SPIDER_URL" ]; then
             echo "continue=false" >> $GITHUB_ENV
             echo "对比结果一致。停止脚本."
@@ -80,24 +82,25 @@ jobs:
           WEX_JSON: ${{ secrets.WEX_JSON }}
         run: |
           response=$(curl -s ${{ env.WEX_JSON }})
-          updated_data=$(echo "$response" | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${{ steps.get-spider-url.outputs.SPIDER_URL }}'; print(json.dumps(data, ensure_ascii=False))")
+          # 使用 steps.<step_id>.outputs.<output_name> 获取输出
+          updated_data=$(echo "$response" | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${{ steps.get-spider-url.outputs.spider_url }}'; print(json.dumps(data, ensure_ascii=False))")
 
           echo "$updated_data" > spider.json
           curl -F "file=@spider.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN2 }}"
 
           echo "$updated_data" > wex.json
           curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
-          
+
       - name: 创建 GitHub Release
         if: env.continue == 'true'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: 'spider-update-${{ github.run_number }}'
-          name: 'Spider 更新 - ${{ github.run_number }}' 
+          name: 'Spider 更新 - ${{ github.run_number }}'
           body: |
             ## 更新的 Spider 字段:
             ```
-            ${{ steps.get-spider-url.outputs.SPIDER_URL }}
+            ${{ steps.get-spider-url.outputs.spider_url }}
             ```
         env:
           GIT_KEY: ${{ secrets.GIT_KEY }}
