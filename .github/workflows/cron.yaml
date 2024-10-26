@@ -68,7 +68,6 @@ jobs:
             echo "continue=true" >> $GITHUB_ENV
             echo "对比结果不同。继续脚本."
           fi
-
       # Step 5: Update Spider Field and upload to Kstore
       - name: 更新 Spider 字段并上传 Kstore
         if: env.continue == 'true'
@@ -87,12 +86,21 @@ jobs:
           echo "$updated_data" > wex.json
           curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
           
+          # 将 updated_data 设置为环境变量，供下一步使用
+          echo "UPDATED_DATA<<EOF" >> $GITHUB_ENV
+          echo "$updated_data" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: 创建 GitHub Release
         if: env.continue == 'true'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: 'spider-update-${{ github.run_number }}'
           name: 'Spider 更新 - ${{ github.run_number }}' 
-          body: '自动更新 Spider 字段'
+          body: |
+            ## 更新的 Spider 字段:
+            ```
+            ${{ env.UPDATED_DATA }}
+            ```
         env:
           GIT_KEY: ${{ secrets.GIT_KEY }}
