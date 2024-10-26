@@ -6,7 +6,7 @@ on:
       - wex
   workflow_dispatch:
   schedule:
-    - cron: '*/45 * * * *'  # 每55分钟执行一次
+    - cron: '*/45 * * * *'  # 每45分钟执行一次
 
 jobs:
   update-spider:
@@ -68,6 +68,7 @@ jobs:
             echo "continue=true" >> $GITHUB_ENV
             echo "对比结果不同。继续脚本."
           fi
+
       # Step 5: Update Spider Field and upload to Kstore
       - name: 更新 Spider 字段并上传 Kstore
         if: env.continue == 'true'
@@ -91,12 +92,13 @@ jobs:
           echo "$updated_data" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
+      # Step 6: Create GitHub Release
       - name: 创建 GitHub Release
         if: env.continue == 'true'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: 'spider-update-${{ github.run_number }}'
-          name: 'Spider 更新 - ${{ github.event.schedule && github.event.schedule[0].schedule || format('UTC %Y-%m-%d %H:%M', github.event.schedule && github.event.schedule[0].at || github.event.pull_request.merged_at || github.event.push.pushed_at) }}' 
+          name: 'Spider 更新 - ${{ github.event.schedule && github.event.schedule[0].schedule || format('UTC %Y-%m-%d %H:%M', github.event.schedule && github.event.schedule[0].at || github.event.pull_request.merged_at || github.event.push.pushed_at) }}'
           body: |
             ## 更新的 Spider 字段:
             ```
