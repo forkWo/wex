@@ -44,6 +44,7 @@ jobs:
 
       # Step 4: Get Spider URL and set environment variable
       - name: 获取 Spider 字段
+        id: get-spider-url
         run: |
           SPIDER_URL=$(python -c "import requests; print(requests.get('https://9280.kstore.space/wex.json').json()['spider'])")
           echo "SPIDER_URL=$SPIDER_URL" >> $GITHUB_ENV
@@ -55,7 +56,7 @@ jobs:
           SPIDER_JSON: ${{ secrets.SPIDER_JSON }}
         run: |
           EXISTING_SPIDER_URL=$(python -c "import requests; print(requests.get('${{ env.SPIDER_JSON }}').json()['spider'].strip())")
-          SPIDER_URL=$(echo $SPIDER_URL | tr -d '\n' | tr -d ' ')
+          SPIDER_URL=$(echo ${{ steps.get-spider-url.outputs.SPIDER_URL }} | tr -d '\n' | tr -d ' ')
           EXISTING_SPIDER_URL=$(echo $EXISTING_SPIDER_URL | tr -d '\n' | tr -d ' ')
 
           echo "New SPIDER_URL: $SPIDER_URL"
@@ -79,7 +80,7 @@ jobs:
           WEX_JSON: ${{ secrets.WEX_JSON }}
         run: |
           response=$(curl -s ${{ env.WEX_JSON }})
-          updated_data=$(echo "$response" | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${SPIDER_URL}'; print(json.dumps(data, ensure_ascii=False))")
+          updated_data=$(echo "$response" | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${{ steps.get-spider-url.outputs.SPIDER_URL }}'; print(json.dumps(data, ensure_ascii=False))")
 
           echo "$updated_data" > spider.json
           curl -F "file=@spider.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN2 }}"
@@ -93,6 +94,10 @@ jobs:
         with:
           tag_name: 'spider-update-${{ github.run_number }}'
           name: 'Spider 更新 - ${{ github.run_number }}' 
-          body: '自动更新 Spider 字段'
+          body: |
+            ## 更新的 Spider 字段:
+            ```
+            ${{ steps.get-spider-url.outputs.SPIDER_URL }}
+            ```
         env:
           GIT_KEY: ${{ secrets.GIT_KEY }}
