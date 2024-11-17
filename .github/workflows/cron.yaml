@@ -45,7 +45,7 @@ jobs:
       # Step 4: Get Spider URL and set environment variable
       - name: 获取 Spider 字段
         run: |
-          SPIDER_URL=$(python -c "import requests; print(requests.get('https://9280.kstore.space/wex.json').json()['spider'])")
+          SPIDER_URL=$(python -c "import requests; print(requests.get('https://d.kstore.dev/download/9280/wex.json').json()['spider'])")
           echo "SPIDER_URL=$SPIDER_URL" >> $GITHUB_ENV
 
       # Step 4.5: Compare with existing Spider URL
