@@ -17,7 +17,7 @@ jobs:
           file="niu.json"   #文件路径
           curl -s http://www.饭太硬.com/jm/jiemi.php?url=http://tv.999888987.xyz >$file
           id=0   #文件夹ID
-          token="8072-84539d5bd94449a2b538ba6bb1cb44c4"
+          token="94449a2b538ba6bb1cb44c4"
           # file="bbbs.jpeg"
           curl https://upload.kstore.space/upload/$id?access_token=$token -F "file=@$file"
                   
