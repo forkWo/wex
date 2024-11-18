@@ -6,7 +6,7 @@ on:
       - wex
   workflow_dispatch:
   schedule:
-    - cron: '*/50 * * * *'  # 每50分钟执行一次
+    - cron: '*/55 * * * *'  # 每55分钟执行一次
 
 jobs:
   update-spider:
@@ -86,13 +86,3 @@ jobs:
 
           echo "$updated_data" > wex.json
           curl -F "file=@wex.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
-          
-      - name: 创建 GitHub Release
-        if: env.continue == 'true'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: 'spider-update-${{ github.run_number }}'
-          name: 'Spider 更新 - ${{ github.run_number }}' 
-          body: '已更新 Spider 字段'
-        env:
-          GIT_KEY: ${{ secrets.GIT_KEY }}
