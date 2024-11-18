@@ -82,10 +82,10 @@ jobs:
           updated_data=$(echo "$response" | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${SPIDER_URL}'; print(json.dumps(data, ensure_ascii=False))")
 
           echo "$updated_data" > spider.json
-          curl -F "file=@spider.json" "https://upload.kstore.ksust.com/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN2 }}"
+          curl -F "file=@spider.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN2 }}"
 
           echo "$updated_data" > wex.json
-          curl -F "file=@wex.json" "https://upload.kstore.ksust.com/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
+          curl -F "file=@wex.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
           
       - name: 创建 GitHub Release
         if: env.continue == 'true'
