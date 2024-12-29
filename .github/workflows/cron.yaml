@@ -12,17 +12,20 @@ jobs:
   update-spider:
     runs-on: ubuntu-latest
 
-    steps:
-      # Step 0: Delete previous runs
+steps:
+  # Step 0: Delete previous runs
       - name: 删除任务流
         env:
-          PAT: ${{ secrets.PAT }}
+        PAT: ${{ secrets.PAT }}
         run: |
-          curl -s -H "Authorization: token $PAT" \
-          "https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }}" \
-          | jq -r '.workflow_runs | map(select(.status == "completed")) | .[72:] | .[].id' \
-          | xargs -I {} curl -s -X DELETE -H "Authorization: token $PAT" \
+          completed_runs=$(curl -s -H "Authorization: token $PAT" \
+          "https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }}&status=completed" \
+          | jq -r '.workflow_runs | .[72:] | .[].id')
+      
+          if [ -n "$completed_runs" ]; then
+          echo "$completed_runs" | xargs -n 1 -I {} curl -s -X DELETE -H "Authorization: token $PAT" \
           "https://api.github.com/repos/${{ github.repository }}/actions/runs/{}"
+          fi
 
       # Step 1: Checkout the repository
       - name: 检出代码库
