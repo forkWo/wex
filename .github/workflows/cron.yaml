@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
 steps:
-  # Step 0: Delete previous runs
+      # Step 0: Delete previous runs
       - name: 删除任务流
         env:
-        PAT: ${{ secrets.PAT }}
+         PAT: ${{ secrets.PAT }}
         run: |
           completed_runs=$(curl -s -H "Authorization: token $PAT" \
           "https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }}&status=completed" \
