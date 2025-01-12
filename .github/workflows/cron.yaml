@@ -56,7 +56,7 @@ jobs:
         env:
           SPIDER_JSON: ${{ secrets.SPIDER_JSON }}
         run: |
-          NEW_SPIDER_URL=$(python -c "import requests; print(requests.get('https://d.kstore.dev/download/9280/wex.json').json()['spider'].strip())")
+          NEW_SPIDER_URL=$(python -c "import requests; print(requests.get('https://9280.kstore.space/wex.json').json()['spider'].strip())")
           EXISTING_SPIDER_URL=$(python -c "import requests; print(requests.get('${{ env.SPIDER_JSON }}').json()['spider'].strip())")
           
           echo "New SPIDER_URL: $NEW_SPIDER_URL"
