@@ -42,7 +42,7 @@ jobs:
                   if item['name'] == '公众号：王二小放牛':
                       item['name'] = '推荐'
                   if item['name'] == '影视专用┃配置中心':
-                      item['name'] = '推荐'
+                      item['name'] = '配置中心'
               json_data['lives'] = [] #Clear "lives"
               return json_data
                   
