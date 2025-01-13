@@ -3,7 +3,7 @@ name: 更新 ts
 on:
   push:
     branches:
-      - wex
+      - ts
   workflow_dispatch:
   schedule:
     - cron: '*/55 * * * *'  # 每 55 分钟执行一次
