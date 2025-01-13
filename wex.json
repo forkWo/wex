@@ -1,11 +1,11 @@
 {
   "spider": "https://fs-im-kefu.7moor-fs1.com/ly/4d2c3f00-7d4c-11e5-af15-41bf63ae4ea0/1736697750414/wex.txt;md5;84a77c1e614adefebc585ad068d113d4",
-  "wallpaper": "https://\u725b\u903c.\u738b\u4e8c\u5c0f\u653e\u725b\u5a03.xyz/",
+  "wallpaper": "https://牛逼.王二小放牛娃.xyz/",
   "logo": "https://fs-im-kefu.7moor-fs1.com/ly/4d2c3f00-7d4c-11e5-af15-41bf63ae4ea0/1716818643045/wexfnw.gif",
   "sites": [
     {
       "key": "Douban",
-      "name": "\ud83d\udc2e\u3010\u516c\u4f17\u53f7\uff1a\u738b\u4e8c\u5c0f\u653e\u725b\u5a03\u3011\ud83d\udc2e",
+      "name": "🐮【公众号：王二小放牛娃】🐮",
       "type": 3,
       "api": "csp_DoubanGuard",
       "searchable": 0,
@@ -15,7 +15,7 @@
     },
     {
       "key": "Doubana",
-      "name": "\u2b07\ufe0f\u3010\u7f51\u76d8\u7c7b\u5148\u626b\u7801\u3011\u2b07\ufe0f",
+      "name": "⬇️【网盘类先扫码】⬇️",
       "type": 3,
       "api": "csp_DoubanGuard",
       "searchable": 0,
@@ -25,7 +25,7 @@
     },
     {
       "key": "Wexconfig",
-      "name": "\ud83d\udc2e\u901a\u7528\u7c7b\u578b\u2503\u914d\u7f6e\u4e2d\u5fc3\ud83d\udc2e",
+      "name": "🐮通用类型┃配置中心🐮",
       "type": 3,
       "api": "csp_WexconfigGuard",
       "searchable": 0,
@@ -34,7 +34,7 @@
     },
     {
       "key": "Wexokconfig",
-      "name": "\ud83d\udc2e\u5f71\u89c6\u4e13\u7528\u2503\u914d\u7f6e\u4e2d\u5fc3\ud83d\udc2e",
+      "name": "🐮影视专用┃配置中心🐮",
       "type": 3,
       "api": "csp_WexokconfigGuard",
       "searchable": 0,
@@ -43,7 +43,7 @@
     },
     {
       "key": "Wexalllive",
-      "name": "\ud83d\udc93\u200d\u805a\u5408\u2503\u76f4\u64ad\ud83d\udc93\u200d",
+      "name": "💓‍聚合┃直播💓‍",
       "type": 3,
       "api": "csp_WexallliveGuard",
       "searchable": 1,
@@ -51,7 +51,7 @@
     },
     {
       "key": "Wexbiliys",
-      "name": "\ud83d\udc93\u200d\u54d4\u54e9\u2503\u5f71\u89c6\ud83d\udc93\u200d",
+      "name": "💓‍哔哩┃影视💓‍",
       "type": 3,
       "api": "csp_WexbiliysGuard",
       "searchable": 1,
@@ -59,7 +59,7 @@
     },
     {
       "key": "115",
-      "name": "\ud83d\udc93\u200d115\u25034K\ud83d\udc93\u200d",
+      "name": "💓‍115┃4K💓‍",
       "type": 3,
       "api": "csp_Wex115shareGuard",
       "searchable": 1,
@@ -70,24 +70,24 @@
       }
     },
     {
-      "key": "\u76d8\u4ed6",
-      "name": "\ud83d\udc93\u200d\u76d8\u4ed6\u25034K\ud83d\udc93\u200d",
+      "key": "盘他",
+      "name": "💓‍盘他┃4K💓‍",
       "type": 3,
       "api": "csp_WexYDpantaGuard",
       "searchable": 1,
       "changeable": 1
     },
     {
-      "key": "\u96f7\u9cb8",
-      "name": "\ud83d\udc93\u200d\u96f7\u9cb8\u25034K\ud83d\udc93\u200d",
+      "key": "雷鲸",
+      "name": "💓‍雷鲸┃4K💓‍",
       "type": 3,
       "api": "csp_WexleijingGuard",
       "searchable": 1,
       "changeable": 1
     },
     {
-      "key": "\u73a9\u5076",
-      "name": "\ud83d\udc93\u200d\u73a9\u5076\u25034K\ud83d\udc93\u200d",
+      "key": "玩偶",
+      "name": "💓‍玩偶┃4K💓‍",
       "type": 3,
       "api": "csp_WoggGuard",
       "searchable": 1,
@@ -95,7 +95,7 @@
     },
     {
       "key": "Wexnullname",
-      "name": "\ud83d\udc93\u65e0\u540d\u25034K\ud83d\udc93",
+      "name": "💓无名┃4K💓",
       "type": 3,
       "api": "csp_WexnullnameGuard",
       "searchable": 1,
@@ -104,7 +104,7 @@
     },
     {
       "key": "Wexyingchao",
-      "name": "\ud83d\udc93\u9e1f\u5de2\u25034K\ud83d\udc93",
+      "name": "💓鸟巢┃4K💓",
       "type": 3,
       "api": "csp_WexyingchaoGuard",
       "searchable": 1,
@@ -112,7 +112,7 @@
     },
     {
       "key": "Wexwanni",
-      "name": "\ud83d\udc93\u73a9\u4f60\u25034K\ud83d\udc93",
+      "name": "💓玩你┃4K💓",
       "type": 3,
       "api": "csp_WexwanniGuard",
       "searchable": 1,
@@ -120,7 +120,7 @@
     },
     {
       "key": "Wexmuougg",
-      "name": "\ud83d\udc93\u6728\u5076\u25034K\ud83d\udc93",
+      "name": "💓木偶┃4K💓",
       "type": 3,
       "api": "csp_WexmuouggGuard",
       "searchable": 1,
@@ -128,7 +128,7 @@
     },
     {
       "key": "Wexzhizhen",
-      "name": "\ud83d\udc93\u81f3\u81fb\u25034K\ud83d\udc93",
+      "name": "💓至臻┃4K💓",
       "type": 3,
       "api": "csp_WexzhizhenGuard",
       "searchable": 1,
@@ -136,7 +136,7 @@
     },
     {
       "key": "Wexlabi",
-      "name": "\ud83d\udc93\u8721\u7b14\u25034K\ud83d\udc93",
+      "name": "💓蜡笔┃4K💓",
       "type": 3,
       "api": "csp_WexlabiGuard",
       "searchable": 1,
@@ -144,7 +144,7 @@
     },
     {
       "key": "WexxiaomiziyuanGuard",
-      "name": "\ud83d\udc93\u5c0f\u7c73\u25034K\ud83d\udc93",
+      "name": "💓小米┃4K💓",
       "type": 3,
       "api": "csp_WexxiaomiziyuanGuard",
       "searchable": 1,
@@ -152,7 +152,7 @@
     },
     {
       "key": "WexfeimaoziyuanGuard",
-      "name": "\ud83d\udc93\u80a5\u732b\u25034K\ud83d\udc93",
+      "name": "💓肥猫┃4K💓",
       "type": 3,
       "api": "csp_WexfeimaoziyuanGuard",
       "searchable": 1,
@@ -160,7 +160,7 @@
     },
     {
       "key": "WextudouGuard",
-      "name": "\ud83d\udc93\u200d\u571f\u8c46\u25034K\ud83d\udc93\u200d",
+      "name": "💓‍土豆┃4K💓‍",
       "type": 3,
       "api": "csp_WextudouGuard",
       "searchable": 1,
@@ -168,7 +168,7 @@
     },
     {
       "key": "WexxzysGuard",
-      "name": "\ud83d\udc93\u6821\u957f\u25034K\ud83d\udc93",
+      "name": "💓校长┃4K💓",
       "type": 3,
       "api": "csp_WexxzysGuard",
       "searchable": 1,
@@ -176,7 +176,7 @@
     },
     {
       "key": "WexydbixinGuard",
-      "name": "\ud83d\udc93\u6bd4\u5fc3\u2503YD\ud83d\udc93",
+      "name": "💓比心┃YD💓",
       "type": 3,
       "api": "csp_WexydbixinGuard",
       "searchable": 1,
@@ -184,7 +184,7 @@
     },
     {
       "key": "WexpipixiaGuard",
-      "name": "\ud83d\udca5\u722c\u867e\u2503\u5f71\u89c6\ud83d\udca5",
+      "name": "💥爬虾┃影视💥",
       "type": 3,
       "api": "csp_WexpipixiaGuard",
       "searchable": 1,
@@ -192,7 +192,7 @@
     },
     {
       "key": "WexrenrenGuard",
-      "name": "\ud83d\udca5\u4eba\u4eba\u2503\u5f71\u89c6\ud83d\udca5",
+      "name": "💥人人┃影视💥",
       "type": 3,
       "api": "csp_WexrenrenGuard",
       "searchable": 1,
@@ -200,7 +200,7 @@
     },
     {
       "key": "mingriyingshi",
-      "name": "\ud83d\ude01\u660e\u65e5\u2503\u5f71\u89c6\ud83d\ude01",
+      "name": "😁明日┃影视😁",
       "type": 3,
       "api": "csp_WexMingriysGuard",
       "searchable": 1,
@@ -208,7 +208,7 @@
     },
     {
       "key": "Fujutv",
-      "name": "\ud83d\ude01\u8150\u5267\u2503\u5f71\u89c6\ud83d\ude01",
+      "name": "😁腐剧┃影视😁",
       "type": 3,
       "api": "csp_WexFujutvGuard",
       "searchable": 1,
@@ -216,7 +216,7 @@
     },
     {
       "key": "SubaibaiGuard",
-      "name": "\ud83c\udf87\u767d\u767d\u2503\u79d2\u64ad\ud83c\udf87",
+      "name": "🎇白白┃秒播🎇",
       "type": 3,
       "api": "csp_SubaibaiGuard",
       "searchable": 1,
@@ -224,7 +224,7 @@
     },
     {
       "key": "Wexduboku",
-      "name": "\ud83c\udf87\u72ec\u64ad\u2503\u79d2\u64ad\ud83c\udf87",
+      "name": "🎇独播┃秒播🎇",
       "type": 3,
       "api": "csp_WexdubokuGuard",
       "searchable": 1,
@@ -232,7 +232,7 @@
     },
     {
       "key": "Wex4Kav",
-      "name": "\ud83c\udf87\u6025\u901f\u2503\u79d2\u64ad\ud83c\udf87",
+      "name": "🎇急速┃秒播🎇",
       "type": 3,
       "api": "csp_Wex4KavGuard",
       "searchable": 1,
@@ -240,7 +240,7 @@
     },
     {
       "key": "Wexbaipiao",
-      "name": "\ud83c\udf87\u661f\u661f\u2503\u79d2\u64ad\ud83c\udf87",
+      "name": "🎇星星┃秒播🎇",
       "type": 3,
       "api": "csp_WexbaipiaoGuard",
       "searchable": 1,
@@ -248,7 +248,7 @@
     },
     {
       "key": "Wexsaohuo",
-      "name": "\ud83c\udf87\u706b\u706b\u2503\u79d2\u64ad\ud83c\udf87",
+      "name": "🎇火火┃秒播🎇",
       "type": 3,
       "api": "csp_WexsaohuoGuard",
       "searchable": 1,
@@ -256,7 +256,7 @@
     },
     {
       "key": "Wexzxzj",
-      "name": "\ud83c\udf87\u5916\u5267\u2503\u79d2\u64ad\ud83c\udf87",
+      "name": "🎇外剧┃秒播🎇",
       "type": 3,
       "api": "csp_WexzxzjGuard",
       "searchable": 1,
@@ -264,7 +264,7 @@
     },
     {
       "key": "Wexbaozitv",
-      "name": "\ud83c\udf87\u5305\u5b50\u2503\u79d2\u64ad\ud83c\udf87",
+      "name": "🎇包子┃秒播🎇",
       "type": 3,
       "api": "csp_WexbaozitvGuard",
       "searchable": 1,
@@ -272,7 +272,7 @@
     },
     {
       "key": "csp_Nmys",
-      "name": "\ud83c\udf87\u4f2f\u4f2f\u2503\u79d2\u64ad\ud83c\udf87",
+      "name": "🎇伯伯┃秒播🎇",
       "type": 3,
       "api": "csp_WexNmysGuard",
       "searchable": 1,
@@ -280,7 +280,7 @@
     },
     {
       "key": "Diduanys",
-      "name": "\ud83c\udf87\u6df1\u6e0a\u2503\u79d2\u64ad\ud83c\udf87",
+      "name": "🎇深渊┃秒播🎇",
       "type": 3,
       "api": "csp_WexDiduanysGuard",
       "searchable": 1,
@@ -288,7 +288,7 @@
     },
     {
       "key": "WexBDys",
-      "name": "\ud83c\udf87\u6ef4\u6ef4\u2503\u79d2\u64ad\ud83c\udf87",
+      "name": "🎇滴滴┃秒播🎇",
       "type": 3,
       "api": "csp_WexBDysGuard",
       "searchable": 1,
@@ -296,7 +296,7 @@
     },
     {
       "key": "WexF4kvmGuard",
-      "name": "\ud83c\udf87\u7eaf\u4eab\u2503\u79d2\u64ad\ud83c\udf87",
+      "name": "🎇纯享┃秒播🎇",
       "type": 3,
       "api": "csp_WexF4kvmGuard",
       "searchable": 1,
@@ -304,106 +304,106 @@
     },
     {
       "key": "WexbttwoGuard",
-      "name": "\ud83c\udf87\u5927\u9f3b\u6d95\u2503\u79d2\u64ad\ud83c\udf87",
+      "name": "🎇大鼻涕┃秒播🎇",
       "type": 3,
       "api": "csp_WexbttwoGuard",
       "searchable": 1,
       "changeable": 1
     },
     {
-      "key": "\u975e\u51e1",
-      "name": "\ud83d\udedd\u975e\u51e1\u2503\u91c7\u96c6\ud83d\udedd",
+      "key": "非凡",
+      "name": "🛝非凡┃采集🛝",
       "type": 1,
       "api": "http://api.ffzyapi.com/api.php/provide/vod",
       "searchable": 1,
       "filterable": 1,
       "changeable": 1,
       "categories": [
-        "\u5267\u60c5\u7247",
-        "\u52a8\u4f5c\u7247",
-        "\u559c\u5267\u7247",
-        "\u79d1\u5e7b\u7247",
-        "\u6050\u6016\u7247",
-        "\u7231\u60c5\u7247",
-        "\u5267\u60c5\u7247",
-        "\u6218\u4e89\u7247",
-        "\u8bb0\u5f55\u7247",
-        "\u56fd\u4ea7\u5267",
-        "\u9999\u6e2f\u5267",
-        "\u97e9\u56fd\u5267",
-        "\u65e5\u672c\u5267",
-        "\u6d77\u5916\u5267",
-        "\u6cf0\u56fd\u5267",
-        "\u6b27\u7f8e\u5267",
-        "\u77ed\u5267",
-        "\u5927\u9646\u7efc\u827a",
-        "\u6e2f\u53f0\u7efc\u827a",
-        "\u65e5\u97e9\u7efc\u827a",
-        "\u6b27\u7f8e\u7efc\u827a",
-        "\u6b27\u7f8e\u52a8\u6f2b",
-        "\u65e5\u97e9\u52a8\u6f2b",
-        "\u6d77\u5916\u52a8\u6f2b",
-        "\u56fd\u4ea7\u52a8\u6f2b",
-        "\u6e2f\u53f0\u52a8\u6f2b"
+        "剧情片",
+        "动作片",
+        "喜剧片",
+        "科幻片",
+        "恐怖片",
+        "爱情片",
+        "剧情片",
+        "战争片",
+        "记录片",
+        "国产剧",
+        "香港剧",
+        "韩国剧",
+        "日本剧",
+        "海外剧",
+        "泰国剧",
+        "欧美剧",
+        "短剧",
+        "大陆综艺",
+        "港台综艺",
+        "日韩综艺",
+        "欧美综艺",
+        "欧美动漫",
+        "日韩动漫",
+        "海外动漫",
+        "国产动漫",
+        "港台动漫"
       ]
     },
     {
-      "key": "\u6728\u8033",
-      "name": "\ud83d\udedd\u6728\u8033\u2503\u91c7\u96c6\ud83d\udedd",
+      "key": "木耳",
+      "name": "🛝木耳┃采集🛝",
       "type": 1,
       "api": "https://json02.heimuer.xyz/api.php/provide/vod",
       "searchable": 1,
       "filterable": 1,
       "changeable": 1,
       "categories": [
-        "\u5267\u60c5\u7247",
-        "\u52a8\u4f5c\u7247",
-        "\u5192\u9669\u7247",
-        "\u559c\u5267\u7247",
-        "\u5947\u5e7b\u7247",
-        "\u6050\u6016\u7247",
-        "\u60ac\u7591\u7247",
-        "\u60ca\u609a\u7247",
-        "\u707e\u96be\u7247",
-        "\u7231\u60c5\u7247",
-        "\u72af\u7f6a\u7247",
-        "\u79d1\u5e7b\u7247",
-        "\u6b4c\u821e\u7247",
-        "\u6218\u4e89\u7247",
-        "\u7ecf\u5178\u7247",
-        "\u52a8\u753b\u7535\u5f71",
-        "\u7f51\u7edc\u7535\u5f71",
-        "\u5176\u4ed6\u7247",
-        "\u56fd\u4ea7\u5267",
-        "\u6e2f\u5267",
-        "\u97e9\u5267",
-        "\u65e5\u5267",
-        "\u6cf0\u5267",
-        "\u53f0\u5267",
-        "\u6b27\u7f8e\u5267",
-        "\u65b0\u9a6c\u5267",
-        "\u5176\u4ed6\u5267",
-        "\u56fd\u4ea7\u7efc\u827a",
-        "\u6e2f\u53f0\u7efc\u827a",
-        "\u97e9\u56fd\u7efc\u827a",
-        "\u65e5\u672c\u7efc\u827a",
-        "\u6b27\u7f8e\u7efc\u827a",
-        "\u65b0\u9a6c\u6cf0\u7efc\u827a",
-        "\u5176\u4ed6\u7efc\u827a",
-        "\u53e4\u88c5\u77ed\u5267",
-        "\u8650\u604b\u77ed\u5267",
-        "\u9006\u88ad\u77ed\u5267",
-        "\u795e\u8c6a\u77ed\u5267",
-        "\u91cd\u751f\u77ed\u5267",
-        "\u590d\u4ec7\u77ed\u5267",
-        "\u7a7f\u8d8a\u77ed\u5267",
-        "\u751c\u5ba0\u77ed\u5267",
-        "\u5f3a\u8005\u77ed\u5267",
-        "\u6b27\u7f8e\u52a8\u6f2b",
-        "\u65e5\u672c\u52a8\u6f2b",
-        "\u97e9\u56fd\u52a8\u6f2b",
-        "\u56fd\u4ea7\u52a8\u6f2b",
-        "\u6e2f\u53f0\u52a8\u6f2b"
+        "剧情片",
+        "动作片",
+        "冒险片",
+        "喜剧片",
+        "奇幻片",
+        "恐怖片",
+        "悬疑片",
+        "惊悚片",
+        "灾难片",
+        "爱情片",
+        "犯罪片",
+        "科幻片",
+        "歌舞片",
+        "战争片",
+        "经典片",
+        "动画电影",
+        "网络电影",
+        "其他片",
+        "国产剧",
+        "港剧",
+        "韩剧",
+        "日剧",
+        "泰剧",
+        "台剧",
+        "欧美剧",
+        "新马剧",
+        "其他剧",
+        "国产综艺",
+        "港台综艺",
+        "韩国综艺",
+        "日本综艺",
+        "欧美综艺",
+        "新马泰综艺",
+        "其他综艺",
+        "古装短剧",
+        "虐恋短剧",
+        "逆袭短剧",
+        "神豪短剧",
+        "重生短剧",
+        "复仇短剧",
+        "穿越短剧",
+        "甜宠短剧",
+        "强者短剧",
+        "欧美动漫",
+        "日本动漫",
+        "韩国动漫",
+        "国产动漫",
+        "港台动漫"
       ],
       "header": {
         "user-agent": "Mozilla/5.0(WindowsNT10.0;Win64;x64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/125.0.0.0Safari/537.36"
@@ -411,87 +411,87 @@
     },
     {
       "key": "360",
-      "name": "\ud83d\udedd360\u2503\u91c7\u96c6\ud83d\udedd",
+      "name": "🛝360┃采集🛝",
       "type": 1,
       "api": "https://360zy.com/api.php/provide/vod?",
       "searchable": 1,
       "changeable": 1,
       "categories": [
-        "\u52a8\u4f5c\u7247",
-        "\u559c\u5267\u7247",
-        "\u7231\u60c5\u7247",
-        "\u79d1\u5e7b\u7247",
-        "\u6050\u6016\u7247",
-        "\u5267\u60c5\u7247",
-        "\u6218\u4e89\u7247",
-        "\u53e4\u88c5\u7247",
-        "\u60ac\u7591\u7247",
-        "\u72af\u7f6a\u7247",
-        "\u707e\u96be\u7247",
-        "\u56fd\u4ea7\u5267",
-        "\u9999\u6e2f\u5267",
-        "\u97e9\u56fd\u5267",
-        "\u6b27\u7f8e\u5267",
-        "\u53f0\u6e7e\u5267",
-        "\u65e5\u672c\u5267",
-        "\u6d77\u5916\u5267",
-        "\u6cf0\u56fd\u5267",
-        "\u5927\u9646\u7efc\u827a",
-        "\u6e2f\u53f0\u7efc\u827a",
-        "\u65e5\u97e9\u7efc\u827a",
-        "\u6b27\u7f8e\u7efc\u827a",
-        "\u56fd\u4ea7\u52a8\u6f2b",
-        "\u6b27\u7f8e\u52a8\u6f2b",
-        "\u65e5\u97e9\u52a8\u6f2b",
-        "\u73b0\u4ee3\u90fd\u5e02",
-        "\u8111\u6d1e\u60ac\u7591",
-        "\u5e74\u4ee3\u7a7f\u8d8a",
-        "\u53e4\u88c5\u4ed9\u4fa0",
-        "\u5973\u9891\u604b\u7231",
-        "\u6210\u957f\u9006\u88ad",
-        "\u53cd\u8f6c\u723d\u5267"
+        "动作片",
+        "喜剧片",
+        "爱情片",
+        "科幻片",
+        "恐怖片",
+        "剧情片",
+        "战争片",
+        "古装片",
+        "悬疑片",
+        "犯罪片",
+        "灾难片",
+        "国产剧",
+        "香港剧",
+        "韩国剧",
+        "欧美剧",
+        "台湾剧",
+        "日本剧",
+        "海外剧",
+        "泰国剧",
+        "大陆综艺",
+        "港台综艺",
+        "日韩综艺",
+        "欧美综艺",
+        "国产动漫",
+        "欧美动漫",
+        "日韩动漫",
+        "现代都市",
+        "脑洞悬疑",
+        "年代穿越",
+        "古装仙侠",
+        "女频恋爱",
+        "成长逆袭",
+        "反转爽剧"
       ]
     },
     {
-      "key": "\u7231\u5764",
-      "name": "\ud83d\udedd\u7231\u5764\u2503\u91c7\u96c6\ud83d\udedd",
+      "key": "爱坤",
+      "name": "🛝爱坤┃采集🛝",
       "type": 1,
       "api": "https://ikunzyapi.com/api.php/provide/vod?",
       "searchable": 1,
       "changeable": 1,
       "categories": [
-        "\u52a8\u4f5c\u7247",
-        "\u559c\u5267\u7247",
-        "\u7231\u60c5\u7247",
-        "\u79d1\u5e7b\u7247",
-        "\u6050\u6016\u7247",
-        "\u5267\u60c5\u7247",
-        "\u6218\u4e89\u7247",
-        "\u53e4\u88c5\u7247",
-        "\u60ac\u7591\u7247",
-        "\u72af\u7f6a\u7247",
-        "\u707e\u96be\u7247",
-        "\u56fd\u4ea7\u5267",
-        "\u9999\u6e2f\u5267",
-        "\u97e9\u56fd\u5267",
-        "\u6b27\u7f8e\u5267",
-        "\u53f0\u6e7e\u5267",
-        "\u65e5\u672c\u5267",
-        "\u6d77\u5916\u5267",
-        "\u6cf0\u56fd\u5267",
-        "\u5927\u9646\u7efc\u827a",
-        "\u6e2f\u53f0\u7efc\u827a",
-        "\u65e5\u97e9\u7efc\u827a",
-        "\u6b27\u7f8e\u7efc\u827a",
-        "\u56fd\u4ea7\u52a8\u6f2b",
-        "\u6b27\u7f8e\u52a8\u6f2b",
-        "\u65e5\u97e9\u52a8\u6f2b",
-        "\u723d\u6587\u77ed\u5267"
+        "动作片",
+        "喜剧片",
+        "爱情片",
+        "科幻片",
+        "恐怖片",
+        "剧情片",
+        "战争片",
+        "古装片",
+        "悬疑片",
+        "犯罪片",
+        "灾难片",
+        "国产剧",
+        "香港剧",
+        "韩国剧",
+        "欧美剧",
+        "台湾剧",
+        "日本剧",
+        "海外剧",
+        "泰国剧",
+        "大陆综艺",
+        "港台综艺",
+        "日韩综艺",
+        "欧美综艺",
+        "国产动漫",
+        "欧美动漫",
+        "日韩动漫",
+        "爽文短剧"
       ]
     },
     {
-      "key": "\u65b06V",
-      "name": "\ud83d\udee9\ufe0f\u65b06V\u2503P2P\ud83d\udee9",
+      "key": "新6V",
+      "name": "🛩️新6V┃P2P🛩",
       "type": 3,
       "api": "csp_WexXb6vGuard",
       "searchable": 1,
@@ -499,7 +499,7 @@
     },
     {
       "key": "Wexemby",
-      "name": "\ud83c\udc04\ufe0femby\u25034K\ud83c\udc04\ufe0f",
+      "name": "🀄️emby┃4K🀄️",
       "type": 3,
       "api": "csp_WexembyGuard",
       "searchable": 1,
@@ -507,7 +507,7 @@
     },
     {
       "key": "Wexwencai",
-      "name": "\ud83c\udf3a\u6587\u624d\u2503\u79d2\u64ad\ud83c\udf3a",
+      "name": "🌺文才┃秒播🌺",
       "type": 3,
       "api": "csp_WexwencaiGuard",
       "searchable": 1,
@@ -515,7 +515,7 @@
     },
     {
       "key": "Wexxpgtv",
-      "name": "\ud83c\udf3a\u82f9\u679c\u2503\u79d2\u64ad\ud83c\udf3a",
+      "name": "🌺苹果┃秒播🌺",
       "type": 3,
       "api": "csp_WexxpgtvGuard",
       "searchable": 1,
@@ -523,7 +523,7 @@
     },
     {
       "key": "Wexhanxiaoquan",
-      "name": "\ud83c\udf3a\u97e9\u5708\u2503\u79d2\u64ad\ud83c\udf3a",
+      "name": "🌺韩圈┃秒播🌺",
       "type": 3,
       "api": "csp_WexhanxiaoquanGuard",
       "searchable": 1,
@@ -531,7 +531,7 @@
     },
     {
       "key": "Wexshandian",
-      "name": "\ud83c\udf3a\u95ea\u7535\u2503\u79d2\u64ad\ud83c\udf3a",
+      "name": "🌺闪电┃秒播🌺",
       "type": 3,
       "api": "csp_WexshandianGuard",
       "searchable": 1,
@@ -539,7 +539,7 @@
     },
     {
       "key": "Wexduanjuquark",
-      "name": "\ud83c\udf49\u77ed\u5267\u2503\u5938\u514b\ud83c\udf49",
+      "name": "🍉短剧┃夸克🍉",
       "type": 3,
       "api": "csp_WexduanjuquarkGuard",
       "searchable": 1,
@@ -550,7 +550,7 @@
     },
     {
       "key": "Wexduanjuvop",
-      "name": "\ud83c\udf49\u77ed\u5267\u2503\u79d2\u64ad\ud83c\udf49",
+      "name": "🍉短剧┃秒播🍉",
       "type": 3,
       "api": "csp_WexduanjuvopGuard",
       "searchable": 1,
@@ -558,7 +558,7 @@
     },
     {
       "key": "Wexduanjuhema",
-      "name": "\ud83c\udf49\u77ed\u5267\u2503\u4ed9\u54c1\ud83c\udf49",
+      "name": "🍉短剧┃仙品🍉",
       "type": 3,
       "api": "csp_WexduanjuhemaGuard",
       "searchable": 1,
@@ -566,7 +566,7 @@
     },
     {
       "key": "WexduanjuvmpGuard",
-      "name": "\ud83c\udf49\u77ed\u5267\u2503\u5e1d\u54c1\ud83c\udf49",
+      "name": "🍉短剧┃帝品🍉",
       "type": 3,
       "api": "csp_WexduanjuvmpGuard",
       "searchable": 1,
@@ -574,7 +574,7 @@
     },
     {
       "key": "Wexduanju001",
-      "name": "\ud83c\udf49\u77ed\u5267\u2503\u6781\u54c1\ud83c\udf49",
+      "name": "🍉短剧┃极品🍉",
       "type": 3,
       "api": "csp_Wexduanju001Guard",
       "searchable": 1,
@@ -582,7 +582,7 @@
     },
     {
       "key": "Wexlaobaitingshu",
-      "name": "\ud83c\udf83\u200d\u767d\u5154\u2503\u542c\u4e66\ud83c\udf83",
+      "name": "🎃‍白兔┃听书🎃",
       "type": 3,
       "api": "csp_WexlaobaitingshuGuard",
       "searchable": 1,
@@ -590,7 +590,7 @@
     },
     {
       "key": "Wex275tingshu",
-      "name": "\ud83c\udf83\u200d\u6781\u54c1\u2503\u542c\u4e66\ud83c\udf83",
+      "name": "🎃‍极品┃听书🎃",
       "type": 3,
       "api": "csp_Wex275tingshuGuard",
       "searchable": 1,
@@ -598,7 +598,7 @@
     },
     {
       "key": "Wexliyuan",
-      "name": "\ud83c\udf8e\u620f\u66f2\u2503\u79d2\u64ad\ud83c\udf8e",
+      "name": "🎎戏曲┃秒播🎎",
       "type": 3,
       "api": "csp_WexliyuanGuard",
       "searchable": 1,
@@ -610,7 +610,7 @@
     },
     {
       "key": "Wextangdou",
-      "name": "\ud83d\udc83\u8df3\u821e\u2503\u6559\u5b66\ud83d\udc83",
+      "name": "💃跳舞┃教学💃",
       "type": 3,
       "api": "csp_WextangdouGuard",
       "searchable": 1,
@@ -622,7 +622,7 @@
     },
     {
       "key": "Wexergeduoduo",
-      "name": "\ud83d\udc7c\u591a\u591a\u2503\u513f\u6b4c\ud83d\udc7c",
+      "name": "👼多多┃儿歌👼",
       "type": 3,
       "api": "csp_WexergeduoduoGuard",
       "searchable": 1,
@@ -634,7 +634,7 @@
     },
     {
       "key": "Wexbaobaobashi",
-      "name": "\ud83d\udc7c\u5b9d\u5b9d\u2503\u513f\u6b4c\ud83d\udc7c",
+      "name": "👼宝宝┃儿歌👼",
       "type": 3,
       "api": "csp_WexbaobaobashiGuard",
       "searchable": 1,
@@ -646,7 +646,7 @@
     },
     {
       "key": "Wexbeiwa",
-      "name": "\ud83d\udc7c\u8d1d\u8d1d\u2503\u513f\u6b4c\ud83d\udc7c",
+      "name": "👼贝贝┃儿歌👼",
       "type": 3,
       "api": "csp_WexbeiwaGuard",
       "searchable": 1,
@@ -658,7 +658,7 @@
     },
     {
       "key": "Wextuxiaobei",
-      "name": "\ud83d\udc7c\u5154\u5154\u2503\u513f\u6b4c\ud83d\udc7c",
+      "name": "👼兔兔┃儿歌👼",
       "type": 3,
       "api": "csp_WextuxiaobeiGuard",
       "searchable": 1,
@@ -670,7 +670,7 @@
     },
     {
       "key": "Pandalivetv",
-      "name": "\ud83d\ude0d\u97e9\u56fd\u2503\u76f4\u64ad\ud83d\ude0d",
+      "name": "😍韩国┃直播😍",
       "type": 3,
       "api": "csp_WexPandalivetvGuard",
       "searchable": 0,
@@ -678,7 +678,7 @@
     },
     {
       "key": "Iktv",
-      "name": "\ud83c\udfa4KTV\u2503\u97f3\u4e50\ud83c\udfa4",
+      "name": "🎤KTV┃音乐🎤",
       "type": 3,
       "api": "csp_WexIktvGuard",
       "searchable": 1,
@@ -686,7 +686,7 @@
     },
     {
       "key": "WexDm84",
-      "name": "\ud83e\udd21\u5df4\u58eb\u2503\u52a8\u6f2b\ud83e\udd21",
+      "name": "🤡巴士┃动漫🤡",
       "type": 3,
       "api": "csp_WexDm84Guard",
       "searchable": 1,
@@ -694,15 +694,15 @@
     },
     {
       "key": "WexYsj",
-      "name": "\ud83e\udd21\u5f02\u754c\u2503\u52a8\u6f2b\ud83e\udd21",
+      "name": "🤡异界┃动漫🤡",
       "type": 3,
       "api": "csp_WexYsjGuard",
       "searchable": 1,
       "changeable": 1
     },
     {
-      "key": "\u81ea\u5b9a\u4e49",
-      "name": "\ud83e\udd47\u5168\u80fd\u2503DIY\ud83e\udd47",
+      "key": "自定义",
+      "name": "🥇全能┃DIY🥇",
       "type": 3,
       "api": "csp_WexdiyGuard",
       "searchable": 1,
@@ -713,7 +713,7 @@
     },
     {
       "key": "AList",
-      "name": "\ud83e\udd47Alist\u2503DIY\ud83e\udd47",
+      "name": "🥇Alist┃DIY🥇",
       "type": 3,
       "api": "csp_AListGuard",
       "searchable": 1,
@@ -721,7 +721,7 @@
     },
     {
       "key": "bili",
-      "name": "\ud83c\udd71\u54d4\u54d4\u2503\u5408\u96c6\ud83c\udd71",
+      "name": "🅱哔哔┃合集🅱",
       "type": 3,
       "api": "csp_BiliGuard",
       "searchable": 1,
@@ -737,7 +737,7 @@
     },
     {
       "key": "biliych",
-      "name": "\ud83c\udd71\u54d4\u54d4\u2503\u6b4c\u66f2\ud83c\udd71",
+      "name": "🅱哔哔┃歌曲🅱",
       "type": 3,
       "api": "csp_BiliGuard",
       "searchable": 0,
@@ -753,7 +753,7 @@
     },
     {
       "key": "Wexqingfengdj",
-      "name": "\ud83c\udfbc\u821e\u66f2\u2503\u6447\u5934\ud83c\udfbc",
+      "name": "🎼舞曲┃摇头🎼",
       "type": 3,
       "api": "csp_WexqingfengdjGuard",
       "searchable": 1,
@@ -761,7 +761,7 @@
     },
     {
       "key": "Wexxsmp3",
-      "name": "\ud83c\udfa4\u968f\u8eab\u2503\u76f8\u58f0\ud83c\udfa4",
+      "name": "🎤随身┃相声🎤",
       "type": 3,
       "api": "csp_Wexxsmp3Guard",
       "searchable": 1,
@@ -769,7 +769,7 @@
     },
     {
       "key": "Wexpsmp3",
-      "name": "\ud83c\udfa4\u968f\u8eab\u2503\u8bc4\u4e66\ud83c\udfa4",
+      "name": "🎤随身┃评书🎤",
       "type": 3,
       "api": "csp_Wexpsmp3Guard",
       "searchable": 1,
@@ -777,15 +777,15 @@
     },
     {
       "key": "Wexwwe",
-      "name": "\ud83c\udf10\u683c\u6597\u2503WWE\ud83c\udf10",
+      "name": "🌐格斗┃WWE🌐",
       "type": 3,
       "api": "csp_WexwweGuard",
       "searchable": 1,
       "changeable": 0
     },
     {
-      "key": "\u770b\u7403",
-      "name": "\ud83c\udf1088\u2503\u4f53\u80b2\ud83c\udf10",
+      "key": "看球",
+      "name": "🌐88┃体育🌐",
       "type": 3,
       "api": "csp_KanqiuGuard",
       "searchable": 1,
@@ -795,8 +795,8 @@
       }
     },
     {
-      "key": "926\u770b\u7403",
-      "name": "\ud83c\udf10926\u2503\u4f53\u80b2\ud83c\udf10",
+      "key": "926看球",
+      "name": "🌐926┃体育🌐",
       "type": 3,
       "api": "csp_Wex926kanqiuGuard",
       "searchable": 1,
@@ -806,8 +806,8 @@
       }
     },
     {
-      "key": "1\u76f4\u64ad",
-      "name": "\ud83c\udf10\u4e00\u76f4\u2503\u4f53\u80b2\ud83c\udf10",
+      "key": "1直播",
+      "name": "🌐一直┃体育🌐",
       "type": 3,
       "api": "csp_Wexzhibo1Guard",
       "searchable": 1,
@@ -818,7 +818,7 @@
     },
     {
       "key": "Wexmiso",
-      "name": "\ud83c\udfa0\u7c73\u641c\u2503\u7efc\u5408\ud83c\udfa0",
+      "name": "🎠米搜┃综合🎠",
       "type": 3,
       "api": "csp_WexmisoGuard",
       "searchable": 1,
@@ -826,23 +826,23 @@
     },
     {
       "key": "Wexed3000",
-      "name": "\ud83c\udfa0\u6613\u8fea\u2503\u7efc\u5408\ud83c\udfa0",
+      "name": "🎠易迪┃综合🎠",
       "type": 3,
       "api": "csp_Wexed3000Guard",
       "searchable": 1,
       "changeable": 0
     },
     {
-      "key": "\u6613\u641c",
-      "name": "\ud83c\udfa0\u6613\u641c\u2503\u7efc\u5408\ud83c\udfa0",
+      "key": "易搜",
+      "name": "🎠易搜┃综合🎠",
       "type": 3,
       "api": "csp_YiSoGuard",
       "searchable": 1,
       "changeable": 0
     },
     {
-      "key": "\u76e4\u641c",
-      "name": "\ud83c\udfa0\u76e4\u641c\u2503\u7efc\u5408\ud83c\udfa0",
+      "key": "盤搜",
+      "name": "🎠盤搜┃综合🎠",
       "type": 3,
       "api": "csp_PanSearchGuard",
       "searchable": 1,
@@ -850,7 +850,7 @@
     },
     {
       "key": "Wexyingso",
-      "name": "\ud83c\udfa0\u5f71\u5b50\u2503\u7efc\u5408\ud83c\udfa0",
+      "name": "🎠影子┃综合🎠",
       "type": 3,
       "api": "csp_WexyingsoGuard",
       "searchable": 1,
@@ -858,7 +858,7 @@
     },
     {
       "key": "Wextyso",
-      "name": "\ud83c\udfa0\u7ed9\u529b\u2503\u5929\u9038\ud83c\udfa0",
+      "name": "🎠给力┃天逸🎠",
       "type": 3,
       "api": "csp_WextysoGuard",
       "searchable": 1,
@@ -866,7 +866,7 @@
     },
     {
       "key": "push_agent",
-      "name": "\u63a8\u9001",
+      "name": "推送",
       "type": 3,
       "api": "csp_PushGuard",
       "searchable": 1,
@@ -875,22 +875,22 @@
   ],
   "parses": [
     {
-      "name": "\u738b",
+      "name": "王",
       "type": 1,
       "url": "http://122.228.84.103:7777/api/?key=4Dk5tdayvY6NZufEMG&url="
     },
     {
-      "name": "\u4e8c",
+      "name": "二",
       "type": 1,
       "url": "http://110.42.7.182:880/api/?key=7e84f07dc78fbb3406d64a1ab7d966b3&url="
     },
     {
-      "name": "\u5c0f",
+      "name": "小",
       "type": 1,
       "url": "http://43.136.176.188:91/api/?key=4ef232e96172b0bda78d393c695fe7c4&url="
     },
     {
-      "name": "\u5e05",
+      "name": "帅",
       "type": 1,
       "url": "http://pan.qiaoji8.com/tvbox/neibu.php?url="
     }
@@ -960,7 +960,7 @@
       ]
     },
     {
-      "name": "\u6d77\u5916\u770b",
+      "name": "海外看",
       "hosts": [
         "haiwaikan"
       ],
@@ -974,7 +974,7 @@
       ]
     },
     {
-      "name": "\u706b\u5c71\u55c5\u63a2",
+      "name": "火山嗅探",
       "hosts": [
         "huoshan.com"
       ],
@@ -983,7 +983,7 @@
       ]
     },
     {
-      "name": "\u6296\u97f3\u55c5\u63a2",
+      "name": "抖音嗅探",
       "hosts": [
         "douyin.com"
       ],
@@ -992,7 +992,7 @@
       ]
     },
     {
-      "name": "\u8fb2\u6c11\u55c5\u63a2",
+      "name": "農民嗅探",
       "hosts": [
         "toutiaovod.com"
       ],
@@ -1001,7 +1001,7 @@
       ]
     },
     {
-      "name": "\u65b0\u89c6\u89c9\u55c5\u63a2",
+      "name": "新视觉嗅探",
       "hosts": [
         "muzhi-video.bj.bcebos.com"
       ],
@@ -1010,7 +1010,7 @@
       ]
     },
     {
-      "name": "\u4e03\u65b0\u55c5\u63a2",
+      "name": "七新嗅探",
       "hosts": [
         "api.52wyb.com"
       ],
@@ -1019,7 +1019,7 @@
       ]
     },
     {
-      "name": "\u591c\u5e02\u9ede\u64ca",
+      "name": "夜市點擊",
       "hosts": [
         "yeslivetv.com"
       ],
@@ -1028,7 +1028,7 @@
       ]
     },
     {
-      "name": "\u6bdb\u9a62\u9ede\u64ca",
+      "name": "毛驢點擊",
       "hosts": [
         "www.maolvys.com"
       ],
