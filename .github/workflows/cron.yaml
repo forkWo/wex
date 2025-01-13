@@ -3,7 +3,7 @@ name: 更新 cs
 on:
   push:
     branches:
-      - wex
+      - 1
   workflow_dispatch:
   schedule:
     - cron: '*/55 * * * *'
@@ -61,10 +61,14 @@ jobs:
             else .
             end
            ) | .lives = [] | .doh = [] | .sites =  del(.sites[] | select(.name == "⬇️【网盘类先扫码】⬇️"))' > cs.json
+           
+          # 输出KSTORE_TOKEN 的值，看看是否包含隐式空格
+          echo "KSTORE_TOKEN value: ${{ secrets.KSTORE_TOKEN }}"
 
-          # 上传到 Kstore
-          curl -X POST \
+          # 上传到 Kstore，添加 -v 参数查看详细信息, 添加 2>&1将错误信息也输出
+          curl -v -X POST \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.KSTORE_TOKEN }}" \
+             -H "Content-Length: $(wc -c < cs.json)" \
             -d @cs.json \
-            "https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}"
+            "https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}" 2>&1
