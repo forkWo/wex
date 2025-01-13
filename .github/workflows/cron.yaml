@@ -32,15 +32,15 @@ jobs:
         run: |
           cat wex.json
 
-      - name: Update JSON with Python script
-        id: update-json-data
+      - name: Update and Remove Wexconfig (Python Script)
+        id: update-and-remove-wexconfig
         run: |
           python3 - <<EOF
           import json, sys
 
-          def update_json_data(json_data):
+          def modify_wex_data(json_data):
               try:
-                  data_list = json_data.get('list', []) # Handle missing 'list' gracefully
+                  data_list = json_data.get('list', [])
                   for item in data_list:
                       if 'name' in item:
                           if item['name'] == '公众号：王二小放牛':
@@ -53,28 +53,6 @@ jobs:
                   print(f"Error processing JSON (update): {e}", file=sys.stderr)
                   return None
 
-          try:
-              with open('wex.json', 'r') as f:
-                  json_data = json.load(f)
-              updated_json_data = update_json_data(json_data)
-              if updated_json_data:
-                  with open('wex.json', 'w') as f:
-                      json.dump(updated_json_data, f, indent=2)
-              else:
-                  print("Error updating JSON. Exiting.", file=sys.stderr)
-                  sys.exit(1)
-          except json.JSONDecodeError as e:
-              print(f"Error decoding JSON (update): {e}", file=sys.stderr)
-              sys.exit(1)
-          EOF
-
-
-      - name: Remove Wexconfig entry (Python Script)
-        id: remove-wexconfig
-        run: |
-          python3 - <<EOF
-          import json, sys
-
           def remove_wexconfig(json_data):
               try:
                   if 'list' in json_data:
@@ -85,20 +63,29 @@ jobs:
                   return None
 
           try:
-              with open('wex.json', 'r') as f:
+              with open('wex.json', 'r+') as f:
                   data = json.load(f)
-              updated_data = remove_wexconfig(data)
-              if updated_data is not None:
-                  with open('wex.json', 'w') as f:
-                      json.dump(updated_data, f, indent=2)
-              else:
-                  print("Error removing Wexconfig. Exiting.", file=sys.stderr)
-                  sys.exit(1)
+
+                  # Apply modifications
+                  updated_data = modify_wex_data(data)
+                  if updated_data is None:
+                      print("Error updating JSON. Exiting.", file=sys.stderr)
+                      sys.exit(1)
+
+                  # Remove Wexconfig entries
+                  final_data = remove_wexconfig(updated_data)
+                  if final_data is None:
+                      print("Error removing Wexconfig entries. Exiting.", file=sys.stderr)
+                      sys.exit(1)
+
+                  f.seek(0)
+                  json.dump(final_data, f, indent=2)
+                  f.truncate()
+
           except json.JSONDecodeError as e:
-              print(f"Error decoding JSON (remove): {e}", file=sys.stderr)
+              print(f"Error decoding JSON: {e}", file=sys.stderr)
               sys.exit(1)
           EOF
-
 
       - name: Git add and commit
         run: |
