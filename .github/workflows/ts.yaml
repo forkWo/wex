@@ -58,15 +58,14 @@ jobs:
         run: |
           response=$(curl -s ${{ env.WEX_JSON_URL }})
           edited_data=$(echo "$response" | python -c "
-import sys, json; 
-data = json.load(sys.stdin); 
-data = [entry for entry in data if entry['key'] not in ['Doubana', 'Wexconfig']]; 
-for entry in data:
-    if entry['name'] == '公众号：王二小放牛娃':
-        entry['name'] = '推荐';
-print(json.dumps(data, ensure_ascii=False))")
-
-          echo "$edited_data" > edited_wex.json
+          import sys, json;
+          data = json.load(sys.stdin);
+          data = [entry for entry in data if entry['key'] not in ['Doubana', 'Wexconfig']];
+          for entry in data:
+          if entry['name'] == '公众号：王二小放牛娃':
+          entry['name'] = '推荐';
+          print(json.dumps(data, ensure_ascii=False))")
+          echo \"$edited_data\" > edited_wex.json
 
       # Step 6: Upload Edited JSON Content
       - name: 上传编辑后的 JSON 内容
@@ -74,4 +73,4 @@ print(json.dumps(data, ensure_ascii=False))")
           KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
           KSTORE_ID: ${{ secrets.KSTORE_ID }}
         run: |
-          curl -F "file=@edited_wex.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
+          curl -F \"file=@edited_wex.json\" \"https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}\"
