@@ -43,11 +43,13 @@ jobs:
                   data_list = json_data.get('list', [])
                   for item in data_list:
                       if 'name' in item:
-                          if item['name'] == '公众号：王二小放牛':
+                          current_name = item['name']
+                          print(f"Current name being checked: '{current_name}'")
+                          if current_name == '公众号：王二小放牛娃':
                               item['name'] = '推荐'
-                          elif item['name'] == '影视专用┃配置中心':
+                          elif current_name == '影视专用┃配置中心':
                               item['name'] = '配置中心'
-                  json_data['lives'] = []  # Clear 'lives' if it exists
+                  json_data['lives'] = []
                   return json_data
               except (KeyError, TypeError) as e:
                   print(f"Error processing JSON (update): {e}", file=sys.stderr)
@@ -66,20 +68,18 @@ jobs:
               with open('wex.json', 'r+') as f:
                   data = json.load(f)
 
-                  # Apply modifications
                   updated_data = modify_wex_data(data)
                   if updated_data is None:
                       print("Error updating JSON. Exiting.", file=sys.stderr)
                       sys.exit(1)
 
-                  # Remove Wexconfig entries
                   final_data = remove_wexconfig(updated_data)
                   if final_data is None:
                       print("Error removing Wexconfig entries. Exiting.", file=sys.stderr)
                       sys.exit(1)
 
                   f.seek(0)
-                  json.dump(final_data, f, indent=2)
+                  json.dump(final_data, f, indent=2, ensure_ascii=False) # Added ensure_ascii=False
                   f.truncate()
 
           except json.JSONDecodeError as e:
