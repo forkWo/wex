@@ -6,7 +6,7 @@ on:
       - ts
   workflow_dispatch:
   schedule:
-    - cron: '*/55 * * * *'  # 每 55 分钟执行一次
+    - cron: '*/55 * * * *'
 
 jobs:
   update-spider:
@@ -37,23 +37,40 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests jq
 
-      - name: Get WEX URL
+      - name: Get WEX URL and write to env file
         id: get-wex-url
         run: |
-          NEW_WEX_URL=$(curl -s "$KSTORE_URL" | jq -r '.spider') || (echo "Error fetching WEX URL"; exit 1)
-          echo "::set-env name=NEW_WEX_URL::${NEW_WEX_URL}"
+          NEW_WEX_URL=$(curl -s "$KSTORE_URL" | jq -r '.spider' 2>/dev/null || echo "Error fetching WEX URL")
+          echo "NEW_WEX_URL=${NEW_WEX_URL}" > .github/workflows/env.txt
+          if [[ -z "$NEW_WEX_URL" ]]; then
+            echo "::error ::Failed to get WEX URL"
+            exit 1
+          fi
+
+
+      - name: Load environment variables from file
+        uses: actions/github-script@v6
+        id: load_env
+        with:
+          script: |
+            const fs = require('fs');
+            const envFile = '.github/workflows/env.txt';
+            const envContent = fs.readFileSync(envFile, 'utf8');
+            const envVars = envContent.split('\n').filter(line => line.trim() !== '').map(line => line.split('='));
+            core.setOutput('env', envVars);
 
       - name: Compare and Update WEX URL
         id: compare-update
+        env:
+          NEW_WEX_URL: ${{ steps.load_env.outputs.env.split(',')[0].split('=')[1] }} # Extract the value from env file
         run: |
-          EXISTING_WEX_URL=$(cat wex.json 2>/dev/null || echo '{}' | jq -r '.spider') #Handle missing file and error
+          EXISTING_WEX_URL=$(cat wex.json 2>/dev/null || echo '{}' | jq -r '.spider')
           if [[ "$NEW_WEX_URL" == "$EXISTING_WEX_URL" ]]; then
             echo "::set-output name=updated::false"
             echo "WEX URLs are identical. No update needed."
           else
             echo "::set-output name=updated::true"
-            #Efficient JSON update using jq
-            UPDATED_JSON=$(jq --arg new_url "$NEW_WEX_URL" '.spider = $new_url' wex.json) || (echo "Error updating JSON"; exit 1)
+            UPDATED_JSON=$(jq --arg new_url "$NEW_WEX_URL" '.spider = $new_url' wex.json 2>/dev/null || echo "Error updating JSON")
             echo "$UPDATED_JSON" > wex.json
             echo "WEX URL updated successfully."
           fi
@@ -77,5 +94,4 @@ jobs:
             echo "Downloaded WEX JSON successfully."
           else
             echo "Error downloading WEX JSON: HTTP status code $RESPONSE"
-            # Consider whether to exit here or continue.  Depends on your needs.
           fi
