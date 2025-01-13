@@ -1,4 +1,4 @@
-name: 更新 Spider
+name: 更新 ts
 
 on:
   push:
@@ -6,81 +6,116 @@ on:
       - wex
   workflow_dispatch:
   schedule:
-    - cron: '*/55 * * * *'  # 每55分钟执行一次
+    - cron: '*/55 * * * *'  # 每 55 分钟执行一次
 
 jobs:
   update-spider:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 0: Delete previous runs
-      - name: 删除任务流
-        env:
-          PAT: ${{ secrets.PAT }}
-        run: |
-          completed_runs=$(curl -s -H "Authorization: token $PAT" \
-          "https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }}&status=completed" \
-          | jq -r '.workflow_runs | .[72:] | .[].id')
-      
-          if [ -n "$completed_runs" ]; then
-          echo "$completed_runs" | xargs -n 1 -I {} curl -s -X DELETE -H "Authorization: token $PAT" \
-          "https://api.github.com/repos/${{ github.repository }}/actions/runs/{}"
-          fi
-
-      # Step 1: Checkout the repository
-      - name: 检出代码库
-        uses: actions/checkout@v2
-
-      # Step 2: Setup Python
-      - name: 设置 Python
-        uses: actions/setup-python@v2
+      # Step 0: 删除先前运行的 Action
+      - name: 删除先前运行的任务
+        uses: actions/github-script@v6
         with:
-          python-version: '3.x'
+          script: |
+            const octokit = new GitHub.GitHub();
+            const repo = context.repo;
+            const branch = context.ref.split('/')[2];
+            try {
+              const completedRuns = await octokit.rest.actions.listWorkflowRuns({
+                owner: repo.owner,
+                repo: repo.repo,
+                branch,
+                status: 'completed',
+                per_page: 100,
+              });
+              if (completedRuns.data.workflow_runs.length > 0) {
+                for (const run of completedRuns.data.workflow_runs) {
+                  await octokit.rest.actions.deleteWorkflowRun({
+                    owner: repo.owner,
+                    repo: repo.repo,
+                    run_id: run.id,
+                  });
+                }
+              }
+            } catch (error) {
+              console.error('Error deleting previous runs:', error);
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 3: Cache dependencies
+
+      - name: 检出代码库
+        uses: actions/checkout@v3
+
+      - name: 设置 Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.9'
+
       - name: Cache Python dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      # Step 4: Install necessary dependencies
       - name: 安装依赖
-        run: python -m pip install requests
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install requests
+          python -m pip install jq
 
-      # Step 5: Get and Compare Wex URL
       - name: 获取并对比 Wex URL
         id: get-compare-urls
-        env:
-          WEX_JSON: ${{ secrets.WEX_JSON }}
         run: |
-          NEW_WEX_URL=$(python -c "import requests; print(requests.get('https://9280.kstore.space/wex.json').json()['spider'].strip())")
-          EXISTING_WEX_URL=$(python -c "import requests; print(requests.get('${{ env.WEX_JSON }}').json()['spider'].strip())")
-          
+          NEW_WEX_URL=$(curl -s https://9280.kstore.space/wex.json | jq -r '.spider')
+          EXISTING_WEX_URL=$(jq -r '.WEX_URL' <<< "$GITHUB_ENV" )
+
           echo "New WEX_URL: $NEW_WEX_URL"
           echo "Existing WEX_URL: $EXISTING_WEX_URL"
-          
-          if [ "$NEW_WEX_URL" = "$EXISTING_WEX_URL" ]; then
-            echo "continue=false" >> $GITHUB_ENV
-            echo "对比结果一致。停止脚本."
+
+          if [[ "$NEW_WEX_URL" == "$EXISTING_WEX_URL" ]]; then
+            echo "::set-output name=continue::false"
+            echo "对比结果一致。停止脚本。"
+            exit 0  # 重要：退出脚本，避免后续步骤执行
           else
-            echo "continue=true" >> $GITHUB_ENV
+            echo "::set-output name=continue::true"
             echo "WEX_URL=$NEW_WEX_URL" >> $GITHUB_ENV
-            echo "对比结果不同。继续脚本."
+            echo "对比结果不同。继续脚本。"
           fi
 
-      # Step 6: Update Wex Field and upload to Kstore
-      - name: 更新 Wex 字段并上传 Kstore
-        if: env.continue == 'true'
-        env:
-          KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
-          KSTORE_ID: ${{ secrets.KSTORE_ID }}
-          WEX_JSON: ${{ secrets.WEX_JSON }}
-        run: |
-          response=$(curl -s ${{ env.WEX_JSON }})
-          updated_data=$(echo "$response" | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${WEX_URL}'; print(json.dumps(data, ensure_ascii=False))")
 
-          echo "$updated_data" > wex.json
-          curl -F "file=@wex.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
+      - name: 更新 Wex 字段并上传到 Kstore
+        if: steps.get-compare-urls.outputs.continue == 'true'
+        run: |
+          NEW_JSON=$(curl -s https://9280.kstore.space/wex.json)
+          if [[ $? -ne 0 ]]; then
+            echo "Error fetching data from URL."
+            exit 1
+          fi
+          
+          # JSON 验证
+          if jq -e '.spider' <<< "$NEW_JSON" >/dev/null 2>&1; then
+              echo "$NEW_JSON" > ts.json
+          else
+              echo "Error: Invalid JSON format in the fetched data."
+              exit 1
+          fi
+          
+          UPDATED_JSON=$(jq -s '.spider = "$NEW_WEX_URL"' ts.json)
+          if [[ $? -ne 0 ]]; then
+            echo "Error updating JSON."
+            exit 1
+          fi
+
+          RESPONSE=$(curl -X POST -H "Content-Type: application/json" -d "$UPDATED_JSON" -H "Authorization: Bearer ${{ secrets.KSTORE_TOKEN }}" -w "%{http_code} %{http_status_line}" "https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }})
+          
+          # 检查返回码
+          RESPONSE_CODE=$(echo "$RESPONSE" | cut -d ' ' -f 1)
+          if [[ "$RESPONSE_CODE" != "200" ]]; then
+            echo "Error uploading to Kstore. Status Code: $RESPONSE_CODE.  Response: $RESPONSE"
+            exit 1
+          fi
+          echo "Upload successful!"
