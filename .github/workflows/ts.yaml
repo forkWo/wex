@@ -51,7 +51,7 @@ jobs:
         run: python -m pip install requests
 
       # Step 5: Get and Edit JSON Content
-      - name: 获取并编辑 JSON 内容
+- name: 获取并编辑 JSON 内容
         id: edit-json
         env:
           WEX_JSON_URL: https://9280.kstore.space/wex.json
@@ -62,8 +62,8 @@ jobs:
           data = json.load(sys.stdin);
           data = [entry for entry in data if entry['key'] not in ['Doubana', 'Wexconfig']];
           for entry in data:
-          if entry['name'] == '公众号：王二小放牛娃':
-          entry['name'] = '推荐';
+              if entry['name'] == '公众号：王二小放牛娃':
+                  entry['name'] = '推荐';
           print(json.dumps(data, ensure_ascii=False))")
           echo \"$edited_data\" > edited_wex.json
 
