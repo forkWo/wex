@@ -1,35 +1,79 @@
-name: Upload Wex JSON
+name: Update and Upload Wex JSON
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Runs daily at midnight UTC. Adjust as needed.
-  workflow_dispatch: # Allows manual triggering
+    - cron: '0 0 * * *' # Runs daily at midnight UTC
+  workflow_dispatch:
 
 jobs:
-  upload-json:
+  update-json:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Fetch all history for proper branch management
-          ref: refs/heads/ts # Specify the branch to push to
+          fetch-depth: 0
+          ref: refs/heads/ts
 
-      - name: Set up Node.js (for later steps, if needed. Remove if unnecessary.)
-        uses: actions/setup-node@v3
+      - name: Set up Python
+        uses: actions/setup-python@v3
         with:
-          node-version: 16 # Or your desired version
+          python-version: '3.9'
 
+      - name: Install Python dependencies
+        run: pip install requests jq
 
-      - name: Fetch JSON data
-        id: fetch-json
+      - name: Download JSON data
+        id: download-json
         run: |
-          RESPONSE=$(curl -s -f https://9280.kstore.space/wex.json -o wex.json -w '%{http_code}')
-          if [[ "$RESPONSE" != "200" ]]; then
-            echo "::error ::Failed to fetch JSON data: HTTP status code $RESPONSE"
-            exit 1
-          fi
+          curl -s -f https://9280.kstore.space/wex.json -o wex.json || (echo "::error ::Failed to download JSON" && exit 1)
 
+
+      - name: Update JSON with Python script
+        id: update-json-data
+        run: |
+          python - <<EOF
+          import json, sys, re
+          from urllib.request import urlopen
+          
+          def update_json_data(json_data):
+              #Modify fields:
+              for item in json_data['list']:
+                  if item['name'] == '公众号：王二小放牛':
+                      item['name'] = '推荐'
+                  if item['name'] == '影视专用┃配置中心':
+                      item['name'] = '推荐'
+              json_data['lives'] = [] #Clear "lives"
+              return json_data
+                  
+          with open('wex.json', 'r') as f:
+              json_data = json.load(f)
+
+          updated_json_data = update_json_data(json_data)
+
+          with open('wex.json', 'w') as f:
+              json.dump(updated_json_data, f, indent=2)
+
+
+          EOF
+
+
+      - name: Remove Wexconfig entry (Python Script)
+        id: remove-wexconfig
+        run: |
+          python - <<EOF
+          import json
+          with open('wex.json', 'r+') as f:
+              try:
+                  data = json.load(f)
+                  data['list'] = [item for item in data['list'] if item.get('key') != 'Wexconfig']
+                  f.seek(0)
+                  json.dump(data, f, indent=2)
+                  f.truncate()
+              except json.JSONDecodeError as e:
+                  print(f"Error decoding JSON: {e}")
+                  sys.exit(1)
+          EOF
 
       - name: Git add and commit
         run: |
@@ -43,6 +87,6 @@ jobs:
           git push origin ts
           echo "Successfully pushed wex.json to ts branch"
 
-      - name: Cleanup (optional - remove if not needed)
+      - name: Cleanup
         run: |
           rm wex.json
