@@ -54,21 +54,21 @@ jobs:
             exit 1
           fi
 
-          # 使用 jq 修改 JSON 数据并保存到 cs.json
-          echo "$NEW_JSON" | jq  '.sites |= map(
+           # 使用 jq 修改 JSON 数据
+          UPDATED_JSON=$(echo "$NEW_JSON" | jq  '.sites |= map(
             if .name == "公众号：王二小放牛娃" then .name = "推荐"
             elif .name == "影视专用┃配置中心" then .name = "配置中心"
             else .
             end
-           ) | .lives = [] | .doh = [] | .sites =  del(.sites[] | select(.name == "⬇️【网盘类先扫码】⬇️"))' > cs.json
-           
-          # 输出KSTORE_TOKEN 的值，看看是否包含隐式空格
-          echo "KSTORE_TOKEN value: ${{ secrets.KSTORE_TOKEN }}"
+           ) | .lives = [] | .doh = [] | .sites =  del(.sites[] | select(.name == "⬇️【网盘类先扫码】⬇️"))')
 
-          # 上传到 Kstore，添加 -v 参数查看详细信息, 添加 2>&1将错误信息也输出
+
+         # 输出KSTORE_TOKEN 的值，看看是否包含隐式空格
+          echo "KSTORE_TOKEN value: ${{ secrets.KSTORE_TOKEN }}"
+          
+          # 上传到 Kstore
           curl -v -X POST \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.KSTORE_TOKEN }}" \
-             -H "Content-Length: $(wc -c < cs.json)" \
-            -d @cs.json \
+            -d "$UPDATED_JSON" \
             "https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}" 2>&1
