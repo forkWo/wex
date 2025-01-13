@@ -74,4 +74,4 @@ print(json.dumps(data, ensure_ascii=False))")
           KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
           KSTORE_ID: ${{ secrets.KSTORE_ID }}
         run: |
-          curl -F "file=@edited_wex.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
+          curl -F "file=@edited_wex.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}" 
