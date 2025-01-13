@@ -14,91 +14,89 @@ jobs:
         with:
           fetch-depth: 0
           ref: refs/heads/ts
+          
+  - name: Set up Python
+    uses: actions/setup-python@v3
+    with:
+      python-version: '3.9'
 
-      - name: Set up Python
-        uses: actions/setup-python@v3
-        with:
-          python-version: '3.9'
+  - name: Install Python dependencies
+    run: pip install requests jq
 
-      - name: Install Python dependencies
-        run: pip install requests jq
+  - name: Download JSON data
+    id: download-json
+    run: |
+      curl -s -f https://9280.kstore.space/wex.json -o wex.json || (echo "::error ::Failed to download JSON" && exit 1)
 
-      - name: Download JSON data
-        id: download-json
-        run: |
-          curl -s -f https://9280.kstore.space/wex.json -o wex.json || (echo "::error ::Failed to download JSON" && exit 1)
+  - name: Print JSON data for debugging
+    run: |
+      cat wex.json
 
-      - name: Print JSON data for debugging
-        run: |
-          cat wex.json
+  - name: Update and Remove Wexconfig (Python Script)
+    id: update-and-remove-wexconfig
+    run: |
+      python3 - <<EOF
+      import json, sys
 
-      - name: Update and Remove Wexconfig (Python Script)
-        id: update-and-remove-wexconfig
-        run: |
-          python3 - <<EOF
-          import json, sys
-
-          def modify_wex_data(json_data):
-              try:
-                  data_list = json_data.get('list', [])
-                  for item in data_list:
-                      if 'name' in item:
-                          current_name = item['name']
-                          print(f"Current name being checked: '{current_name}'")
-                          if current_name == '公众号：王二小放牛娃':
-                              item['name'] = '推荐'
-                          elif current_name == '影视专用┃配置中心':
-                              item['name'] = '配置中心'
-                  json_data['lives'] = []
-                  return json_data
-              except (KeyError, TypeError) as e:
-                  print(f"Error processing JSON (update): {e}", file=sys.stderr)
-                  return None
-
-          def remove_wexconfig(json_data):
-              try:
-                  if 'list' in json_data:
-                      json_data['list'] = [item for item in json_data['list'] if item.get('key') != 'Wexconfig']
-                  return json_data
-              except (KeyError, TypeError) as e:
-                  print(f"Error processing JSON (remove): {e}", file=sys.stderr)
-                  return None
-
+      def modify_wex_data(json_data):
           try:
-              with open('wex.json', 'r+') as f:
-                  data = json.load(f)
+              data_list = json_data.get('list', [])
+              for item in data_list:
+                  if 'name' in item:
+                      if item['name'].startswith('公众号：王二小放牛娃'):
+                          item['name'] = '推荐'
+                      elif item['name'] == '影视专用┃配置中心':
+                          item['name'] = '配置中心'
+              json_data['lives'] = []
+              return json_data
+          except (KeyError, TypeError) as e:
+              print(f"Error processing JSON (update): {e}", file=sys.stderr)
+              return None
 
-                  updated_data = modify_wex_data(data)
-                  if updated_data is None:
-                      print("Error updating JSON. Exiting.", file=sys.stderr)
-                      sys.exit(1)
+      def remove_wexconfig(json_data):
+          try:
+              if 'list' in json_data:
+                  json_data['list'] = [item for item in json_data['list'] if item.get('key') != 'Wexconfig']
+              return json_data
+          except (KeyError, TypeError) as e:
+              print(f"Error processing JSON (remove): {e}", file=sys.stderr)
+              return None
 
-                  final_data = remove_wexconfig(updated_data)
-                  if final_data is None:
-                      print("Error removing Wexconfig entries. Exiting.", file=sys.stderr)
-                      sys.exit(1)
+      try:
+          with open('wex.json', 'r+') as f:
+              data = json.load(f)
 
-                  f.seek(0)
-                  json.dump(final_data, f, indent=2, ensure_ascii=False) # Added ensure_ascii=False
-                  f.truncate()
+              updated_data = modify_wex_data(data)
+              if updated_data is None:
+                  print("Error updating JSON. Exiting.", file=sys.stderr)
+                  sys.exit(1)
 
-          except json.JSONDecodeError as e:
-              print(f"Error decoding JSON: {e}", file=sys.stderr)
-              sys.exit(1)
-          EOF
+              final_data = remove_wexconfig(updated_data)
+              if final_data is None:
+                  print("Error removing Wexconfig entries. Exiting.", file=sys.stderr)
+                  sys.exit(1)
 
-      - name: Git add and commit
-        run: |
-          git config --global user.email "github-actions@github.com"
-          git config --global user.name "GitHub Actions"
-          git add wex.json
-          git commit -m "Update wex.json" || echo "No changes to commit."
+              f.seek(0)
+              json.dump(final_data, f, indent=2, ensure_ascii=False)
+              f.truncate()
 
-      - name: Git push
-        run: |
-          git push origin ts
-          echo "Successfully pushed wex.json to ts branch"
+      except json.JSONDecodeError as e:
+          print(f"Error decoding JSON: {e}", file=sys.stderr)
+          sys.exit(1)
+      EOF
 
-      - name: Cleanup
-        run: |
-          rm wex.json
+  - name: Git add and commit
+    run: |
+      git config --global user.email "github-actions@github.com"
+      git config --global user.name "GitHub Actions"
+      git add wex.json
+      git commit -m "Update wex.json" || echo "No changes to commit."
+
+  - name: Git push
+    run: |
+      git push origin ts
+      echo "Successfully pushed wex.json to ts branch"
+
+  - name: Cleanup
+    run: |
+      rm wex.json
