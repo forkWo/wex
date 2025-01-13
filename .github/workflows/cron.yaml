@@ -50,41 +50,37 @@ jobs:
       - name: 安装依赖
         run: python -m pip install requests
 
-      # Step 5: Get and Compare Spider URL
-      - name: 获取并对比 Spider URL
+      # Step 5: Get and Compare Wex URL
+      - name: 获取并对比 Wex URL
         id: get-compare-urls
         env:
-          SPIDER_JSON: ${{ secrets.SPIDER_JSON }}
+          WEX_JSON: ${{ secrets.WEX_JSON }}
         run: |
-          NEW_SPIDER_URL=$(python -c "import requests; print(requests.get('https://9280.kstore.space/wex.json').json()['spider'].strip())")
-          EXISTING_SPIDER_URL=$(python -c "import requests; print(requests.get('${{ env.SPIDER_JSON }}').json()['spider'].strip())")
+          NEW_WEX_URL=$(python -c "import requests; print(requests.get('https://9280.kstore.space/wex.json').json()['spider'].strip())")
+          EXISTING_WEX_URL=$(python -c "import requests; print(requests.get('${{ env.WEX_JSON }}').json()['spider'].strip())")
           
-          echo "New SPIDER_URL: $NEW_SPIDER_URL"
-          echo "Existing SPIDER_URL: $EXISTING_SPIDER_URL"
+          echo "New WEX_URL: $NEW_WEX_URL"
+          echo "Existing WEX_URL: $EXISTING_WEX_URL"
           
-          if [ "$NEW_SPIDER_URL" = "$EXISTING_SPIDER_URL" ]; then
+          if [ "$NEW_WEX_URL" = "$EXISTING_WEX_URL" ]; then
             echo "continue=false" >> $GITHUB_ENV
             echo "对比结果一致。停止脚本."
           else
             echo "continue=true" >> $GITHUB_ENV
-            echo "SPIDER_URL=$NEW_SPIDER_URL" >> $GITHUB_ENV
+            echo "WEX_URL=$NEW_WEX_URL" >> $GITHUB_ENV
             echo "对比结果不同。继续脚本."
           fi
 
-      # Step 6: Update Spider Field and upload to Kstore
-      - name: 更新 Spider 字段并上传 Kstore
+      # Step 6: Update Wex Field and upload to Kstore
+      - name: 更新 Wex 字段并上传 Kstore
         if: env.continue == 'true'
         env:
           KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
-          KSTORE_TOKEN2: ${{ secrets.KSTORE_TOKEN2 }}
           KSTORE_ID: ${{ secrets.KSTORE_ID }}
           WEX_JSON: ${{ secrets.WEX_JSON }}
         run: |
           response=$(curl -s ${{ env.WEX_JSON }})
-          updated_data=$(echo "$response" | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${SPIDER_URL}'; print(json.dumps(data, ensure_ascii=False))")
-
-          echo "$updated_data" > spider.json
-          curl -F "file=@spider.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN2 }}"
+          updated_data=$(echo "$response" | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${WEX_URL}'; print(json.dumps(data, ensure_ascii=False))")
 
           echo "$updated_data" > wex.json
           curl -F "file=@wex.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
