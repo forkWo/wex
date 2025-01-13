@@ -6,7 +6,7 @@ on:
       - 1
   workflow_dispatch:
   schedule:
-    - cron: '*/55 * * * *'
+    #- cron: '*/55 * * * *'
 
 jobs:
   update-spider:
