@@ -1,97 +1,48 @@
-name: 更新 ts
+name: Upload Wex JSON
 
 on:
-  push:
-    branches:
-      - ts
-  workflow_dispatch:
   schedule:
-    - cron: '*/55 * * * *'
+    - cron: '0 0 * * *' # Runs daily at midnight UTC. Adjust as needed.
+  workflow_dispatch: # Allows manual triggering
 
 jobs:
-  update-spider:
+  upload-json:
     runs-on: ubuntu-latest
-    env:
-      KSTORE_URL: "https://9280.kstore.space/wex.json"
-      KSTORE_UPLOAD_URL: "https://upload.kstore.dev/upload/YOUR_KSTORE_ID"
-
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Setup Python
-        uses: actions/setup-python@v3
         with:
-          python-version: '3.9'
+          fetch-depth: 0 # Fetch all history for proper branch management
+          ref: refs/heads/ts # Specify the branch to push to
 
-      - name: Cache pip
-        uses: actions/cache@v3
+      - name: Set up Node.js (for later steps, if needed. Remove if unnecessary.)
+        uses: actions/setup-node@v3
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          node-version: 16 # Or your desired version
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests jq
 
-      - name: Get WEX URL and write to env file
-        id: get-wex-url
+      - name: Fetch JSON data
+        id: fetch-json
         run: |
-          NEW_WEX_URL=$(curl -s "$KSTORE_URL" | jq -r '.spider' 2>/dev/null || echo "Error fetching WEX URL")
-          echo "NEW_WEX_URL=${NEW_WEX_URL}" > .github/workflows/env.txt
-          if [[ -z "$NEW_WEX_URL" ]]; then
-            echo "::error ::Failed to get WEX URL"
+          RESPONSE=$(curl -s -f https://9280.kstore.space/wex.json -o wex.json -w '%{http_code}')
+          if [[ "$RESPONSE" != "200" ]]; then
+            echo "::error ::Failed to fetch JSON data: HTTP status code $RESPONSE"
             exit 1
           fi
 
 
-      - name: Load environment variables from file
-        uses: actions/github-script@v6
-        id: load_env
-        with:
-          script: |
-            const fs = require('fs');
-            const envFile = '.github/workflows/env.txt';
-            const envContent = fs.readFileSync(envFile, 'utf8');
-            const envVars = envContent.split('\n').filter(line => line.trim() !== '').map(line => line.split('='));
-            core.setOutput('env', envVars);
-
-      - name: Compare and Update WEX URL
-        id: compare-update
-        env:
-          NEW_WEX_URL: ${{ steps.load_env.outputs.env.split(',')[0].split('=')[1] }} # Extract the value from env file
+      - name: Git add and commit
         run: |
-          EXISTING_WEX_URL=$(cat wex.json 2>/dev/null || echo '{}' | jq -r '.spider')
-          if [[ "$NEW_WEX_URL" == "$EXISTING_WEX_URL" ]]; then
-            echo "::set-output name=updated::false"
-            echo "WEX URLs are identical. No update needed."
-          else
-            echo "::set-output name=updated::true"
-            UPDATED_JSON=$(jq --arg new_url "$NEW_WEX_URL" '.spider = $new_url' wex.json 2>/dev/null || echo "Error updating JSON")
-            echo "$UPDATED_JSON" > wex.json
-            echo "WEX URL updated successfully."
-          fi
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add wex.json
+          git commit -m "Update wex.json" || echo "No changes to commit."
 
-      - name: Upload to Kstore
-        if: steps.compare-update.outputs.updated == 'true'
+      - name: Git push
         run: |
-          RESPONSE=$(curl -X POST -H "Content-Type: application/json" -d "$(cat wex.json)" -H "Authorization: Bearer ${{ secrets.KSTORE_TOKEN }}" "$KSTORE_UPLOAD_URL" -o /dev/null -w '%{http_code}')
-          if [[ "$RESPONSE" == "200" ]]; then
-            echo "Uploaded updated JSON to Kstore successfully."
-          else
-            echo "Error uploading to Kstore: HTTP status code $RESPONSE"
-            exit 1
-          fi
+          git push origin ts
+          echo "Successfully pushed wex.json to ts branch"
 
-      - name: Download initial WEX JSON
-        if: always()
+      - name: Cleanup (optional - remove if not needed)
         run: |
-          RESPONSE=$(curl -s "$KSTORE_URL" -o wex.json -w '%{http_code}')
-          if [[ "$RESPONSE" == "200" ]]; then
-            echo "Downloaded WEX JSON successfully."
-          else
-            echo "Error downloading WEX JSON: HTTP status code $RESPONSE"
-          fi
+          rm wex.json
