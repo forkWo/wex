@@ -28,32 +28,44 @@ jobs:
         run: |
           curl -s -f https://9280.kstore.space/wex.json -o wex.json || (echo "::error ::Failed to download JSON" && exit 1)
 
+      - name: Print JSON data for debugging
+        run: |
+          cat wex.json
 
       - name: Update JSON with Python script
         id: update-json-data
         run: |
-          python - <<EOF
-          import json, sys, re
-          from urllib.request import urlopen
-          
+          python3 - <<EOF
+          import json, sys
+
           def update_json_data(json_data):
-              #Modify fields:
-              for item in json_data['list']:
-                  if item['name'] == '公众号：王二小放牛':
-                      item['name'] = '推荐'
-                  if item['name'] == '影视专用┃配置中心':
-                      item['name'] = '配置中心'
-              json_data['lives'] = [] #Clear "lives"
-              return json_data
-                  
-          with open('wex.json', 'r') as f:
-              json_data = json.load(f)
+              try:
+                  for item in json_data.get('list', []): # Handle missing 'list' gracefully
+                      if 'name' in item: #Check if 'name' key exists
+                          if item['name'] == '公众号：王二小放牛':
+                              item['name'] = '推荐'
+                          elif item['name'] == '影视专用┃配置中心':
+                              item['name'] = '配置中心'
+                  json_data['lives'] = []  # Clear 'lives'
+                  return json_data
+              except (KeyError, TypeError) as e:
+                  print(f"Error processing JSON: {e}", file=sys.stderr)
+                  return None #Return None to indicate failure
 
-          updated_json_data = update_json_data(json_data)
 
-          with open('wex.json', 'w') as f:
-              json.dump(updated_json_data, f, indent=2)
-
+          try:
+              with open('wex.json', 'r') as f:
+                  json_data = json.load(f)
+              updated_json_data = update_json_data(json_data)
+              if updated_json_data:
+                  with open('wex.json', 'w') as f:
+                      json.dump(updated_json_data, f, indent=2)
+              else:
+                  print("Error updating JSON. Exiting.", file=sys.stderr)
+                  sys.exit(1)
+          except json.JSONDecodeError as e:
+              print(f"Error decoding JSON: {e}", file=sys.stderr)
+              sys.exit(1)
 
           EOF
 
@@ -61,18 +73,18 @@ jobs:
       - name: Remove Wexconfig entry (Python Script)
         id: remove-wexconfig
         run: |
-          python - <<EOF
-          import json
-          with open('wex.json', 'r+') as f:
-              try:
+          python3 - <<EOF
+          import json, sys
+          try:
+              with open('wex.json', 'r+') as f:
                   data = json.load(f)
                   data['list'] = [item for item in data['list'] if item.get('key') != 'Wexconfig']
                   f.seek(0)
                   json.dump(data, f, indent=2)
                   f.truncate()
-              except json.JSONDecodeError as e:
-                  print(f"Error decoding JSON: {e}")
-                  sys.exit(1)
+          except (json.JSONDecodeError, KeyError, TypeError) as e:
+              print(f"Error processing JSON: {e}", file=sys.stderr)
+              sys.exit(1)
           EOF
 
       - name: Git add and commit
