@@ -20,17 +20,19 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 下载 JSON 数据
+      - name: 下载 JSON 数据并计算 MD5
+        id: download_json
         run: |
-          if ! curl -s "${{ env.JSON_URL }}" -o 9280.json; then
-            echo "下载 JSON 数据失败！" && exit 1
-          fi
+          # 下载 JSON 数据并计算 MD5
+          ORIGINAL_MD5=$(curl -s "${{ env.JSON_URL }}" | tee 9280.json | md5sum | awk '{print $1}')
+          echo "原始 JSON 文件的 MD5: $ORIGINAL_MD5"
+          echo "ORIGINAL_MD5=$ORIGINAL_MD5" >> $GITHUB_ENV
+          echo "JSON 数据下载完成。"
 
       - name: 处理 JSON 数据
         id: process
         run: |
           set -e
-          echo "开始处理 JSON 数据..."
 
           KEYS_TO_DELETE='[
             "Doubana", "Wexconfig", "WexrenrenGuard", "mingriyingshi", "Fujutv", "SubaibaiGuard", "csp_Nmys",
@@ -40,6 +42,7 @@ jobs:
             "Wexduanju001", "非凡", "木耳", "360", "爱坤"
           ]'
 
+          # 处理 JSON 数据
           if ! jq -c --argjson keys_to_delete "$KEYS_TO_DELETE" '
             del(.doh, .lives) |
             .sites |= (
@@ -56,39 +59,28 @@ jobs:
               ) |
               map(select(.key as $k | $keys_to_delete | index($k) == null))
             )
-          ' 9280.json > wex.json; then
+          ' 9280.json > tmp.json; then
             echo "处理 JSON 数据失败！" && exit 1
           fi
 
+          mv tmp.json wex.json
 
-          ONLINE_JSON=$(curl -s "${{ env.JSON_URL }}")
+          # 计算处理后 JSON 的 MD5
+          PROCESSED_MD5=$(md5sum wex.json | awk '{print $1}')
+          echo "处理后 JSON 文件的 MD5: $PROCESSED_MD5"
 
-          if ! jq -c --argjson keys_to_delete "$KEYS_TO_DELETE" '
-            del(.doh, .lives) |
-            .sites |= (
-              map(
-                if .key == "Douban" then
-                  .name = "🐮【推荐】🐮"
-                elif .key == "Wexokconfig" then
-                  .name = "🐮配置中心🐮"
-                elif .key == "Wexnullname" then
-                  .name = "💓观影┃4K💓"
-                else
-                  .
-                end
-              ) |
-              map(select(.key as $k | $keys_to_delete | index($k) == null))
-            )
-           ' <<< "$ONLINE_JSON" | diff - wex.json > /dev/null ; then
-              echo "JSON 数据已修改，设置输出 changed 为 true。" && echo "changed=true" >> $GITHUB_OUTPUT
+          # 比较 MD5 值
+          if [[ "$ORIGINAL_MD5" != "$PROCESSED_MD5" ]]; then
+            echo "JSON 数据已修改，设置输出 changed 为 true。"
+            echo "changed=true" >> $GITHUB_OUTPUT
           else
-              echo "JSON 数据未修改，无需上传。" && echo "changed=false" >> $GITHUB_OUTPUT
+            echo "JSON 数据未修改，无需上传。"
+            echo "changed=false" >> $GITHUB_OUTPUT
           fi
           echo "JSON 数据处理完成。"
 
       - name: 上传文件到 Kstore
         if: steps.process.outputs.changed == 'true'
         run: |
-          if ! curl -F "file=@wex.json" "${{ env.UPLOAD_URL }}"; then
-            echo "文件上传到 Kstore 失败！" && exit 1
-          fi
+          curl -F "file=@wex.json" "${{ env.UPLOAD_URL }}"
+          echo "文件上传成功。"
