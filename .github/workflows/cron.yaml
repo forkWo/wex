@@ -1,86 +1,68 @@
-name: 更新 Spider
+name:  Wex JSON 更新
 
 on:
   push:
     branches:
       - wex
-  workflow_dispatch:
+  workflow_dispatch: # 手动触发
   schedule:
-#    - cron: '*/55 * * * *'  # 每55分钟执行一次
+    - cron: '0 */2 * * *' # 每两个小时触发一次
+
+env:
+  KSTORE_ID: ${{ secrets.KSTORE_ID }}
+  KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
 
 jobs:
-  update-spider:
+  process_json:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 0: Delete previous runs
-      - name: 删除任务流
-        env:
-          PAT: ${{ secrets.PAT }}
+      - name: 检出代码
         run: |
-          completed_runs=$(curl -s -H "Authorization: token $PAT" \
-          "https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }}&status=completed" \
-          | jq -r '.workflow_runs | .[72:] | .[].id')
-      
-          if [ -n "$completed_runs" ]; then
-          echo "$completed_runs" | xargs -n 1 -I {} curl -s -X DELETE -H "Authorization: token $PAT" \
-          "https://api.github.com/repos/${{ github.repository }}/actions/runs/{}"
-          fi
+          echo "开始检出代码..."
+          echo "代码检出完成。"
+        uses: actions/checkout@v4
 
-      # Step 1: Checkout the repository
-      - name: 检出代码库
-        uses: actions/checkout@v2
-
-      # Step 2: Setup Python
-      - name: 设置 Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
-
-      # Step 3: Cache dependencies
-      - name: Cache Python dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      # Step 4: Install necessary dependencies
-      - name: 安装依赖
-        run: python -m pip install requests
-
-      # Step 5: Get and Compare Wex URL
-      - name: 获取并对比 Wex URL
-        id: get-compare-urls
-        env:
-          WEX_JSON: ${{ secrets.WEX_JSON }}
+      - name: 下载 JSON 数据
         run: |
-          NEW_WEX_URL=$(python -c "import requests; print(requests.get('https://9280.kstore.space/wex.json').json()['spider'].strip())")
-          EXISTING_WEX_URL=$(python -c "import requests; print(requests.get('${{ env.WEX_JSON }}').json()['spider'].strip())")
+          echo "开始下载 JSON 数据..."
+          curl -s https://9280.kstore.space/wex.json > wex.json
+          echo "JSON 数据下载完成。"
+
+      - name: 处理 JSON 数据
+        id: process
+        run: |
+          echo "开始处理 JSON 数据..."
+          jq '
+            . | del(.doh, .lives) |
+            .sites = (
+              .sites |
+              map(
+                if .key == "Douban" then
+                  .name = "🐮【推荐】🐮"
+                elif .key == "Wexokconfig" then
+                 .name = "🐮配置中心🐮"
+                 
+               else
+                 .
+                end
+             ) |
+             map(select(.key != "Doubana" and .key != "Wexconfig" and .key != "WexrenrenGuard" and .key != "mingriyingshi" and .key != "Fujutv" and .key != "SubaibaiGuard" and .key != "csp_Nmys"  and .key != "Wexliyuan" and .key != "Wextangdou" and .key != "Wexergeduoduo" and .key != "Wexbaobaobashi" and .key != "Wexbeiwa" and .key != "Wextuxiaobei" and .key != "Pandalivetv" and .key != "Iktv" and .key != "WexDm84" and .key != "WexYsj" and .key != "自定义" and .key != "AList" and .key != "bili" and .key != "biliych" and .key != "Wexqingfengdj" and .key != "Wexxsmp3" and .key != "Wexpsmp3" and .key != "Wexwwe" and .key != "看球" and .key != "926看球" and .key != "1直播" and .key != "Wexduanjuquark" and .key != "Wexduanjuvop" and .key != "Wexduanjuhema" and .key != "WexduanjuvmpGuard" and .key != "Wexduanju001" and .key != "非凡" and .key != "木耳" and .key != "360" and .key != "爱坤"))
+           )
+          ' wex.json > tmp.json && mv tmp.json wex.json
           
-          echo "New WEX_URL: $NEW_WEX_URL"
-          echo "Existing WEX_URL: $EXISTING_WEX_URL"
-          
-          if [ "$NEW_WEX_URL" = "$EXISTING_WEX_URL" ]; then
-            echo "continue=false" >> $GITHUB_ENV
-            echo "对比结果一致。停止脚本."
+          if [[ $(diff wex.json <(curl -s https://9280.kstore.space/wex.json)) ]]; then
+            echo "JSON 数据已修改，设置输出 changed 为 true。"
+            echo "::set-output name=changed::true"
           else
-            echo "continue=true" >> $GITHUB_ENV
-            echo "WEX_URL=$NEW_WEX_URL" >> $GITHUB_ENV
-            echo "对比结果不同。继续脚本."
+             echo "JSON 数据未修改，设置输出 changed 为 false。"
+             echo "::set-output name=changed::false"
           fi
+          echo "JSON 数据处理完成。"
 
-      # Step 6: Update Wex Field and upload to Kstore
-      - name: 更新 Wex 字段并上传 Kstore
-        if: env.continue == 'true'
-        env:
-          KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
-          KSTORE_ID: ${{ secrets.KSTORE_ID }}
-          WEX_JSON: ${{ secrets.WEX_JSON }}
+      - name: 上传文件到 Kstore
+        if: steps.process.outputs.changed == 'true'
         run: |
-          response=$(curl -s ${{ env.WEX_JSON }})
-          updated_data=$(echo "$response" | python -c "import sys, json; data = json.load(sys.stdin); data['spider'] = '${WEX_URL}'; print(json.dumps(data, ensure_ascii=False))")
-
-          echo "$updated_data" > wex.json
-          curl -F "file=@wex.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
+          echo "开始上传文件到 Kstore..."
+          curl -F "file=@wex.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}" || { echo "上传文件失败！"; exit 1; }
+          echo "文件上传到 Kstore 完成。"
