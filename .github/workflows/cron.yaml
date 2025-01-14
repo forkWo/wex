@@ -23,18 +23,28 @@ jobs:
       - name: 下载 JSON 数据
         run: |
           echo "开始下载 JSON 数据..."
-          curl -s "${{ env.JSON_URL }}" > wex.json
+          if ! curl -s "${{ env.JSON_URL }}" -o 9280.json; then
+            echo "下载 JSON 数据失败！"
+            exit 1
+          fi
           echo "JSON 数据下载完成。"
 
       - name: 处理 JSON 数据
         id: process
         run: |
           echo "开始处理 JSON 数据..."
-          # 定义需要删除的键和需要修改的键
-          KEYS_TO_DELETE=("Doubana" "Wexconfig" "WexrenrenGuard" "mingriyingshi" "Fujutv" "SubaibaiGuard" "csp_Nmys" "Wexliyuan" "Wextangdou" "Wexergeduoduo" "Wexbaobaobashi" "Wexbeiwa" "Wextuxiaobei" "Pandalivetv" "Iktv" "WexDm84" "WexYsj" "自定义" "AList" "bili" "biliych" "Wexqingfengdj" "Wexxsmp3" "Wexpsmp3" "Wexwwe" "看球" "926看球" "1直播" "Wexduanjuquark" "Wexduanjuvop" "Wexduanjuhema" "WexduanjuvmpGuard" "Wexduanju001" "非凡" "木耳" "360" "爱坤")
+
+          # 定义需要删除的键
+          KEYS_TO_DELETE='[
+            "Doubana", "Wexconfig", "WexrenrenGuard", "mingriyingshi", "Fujutv", "SubaibaiGuard", "csp_Nmys",
+            "Wexliyuan", "Wextangdou", "Wexergeduoduo", "Wexbaobaobashi", "Wexbeiwa", "Wextuxiaobei", "Pandalivetv",
+            "Iktv", "WexDm84", "WexYsj", "自定义", "AList", "bili", "biliych", "Wexqingfengdj", "Wexxsmp3", "Wexpsmp3",
+            "Wexwwe", "看球", "926看球", "1直播", "Wexduanjuquark", "Wexduanjuvop", "Wexduanjuhema", "WexduanjuvmpGuard",
+            "Wexduanju001", "非凡", "木耳", "360", "爱坤"
+          ]'
 
           # 使用 jq 处理 JSON 数据
-          jq '
+          if ! jq --argjson keys_to_delete "$KEYS_TO_DELETE" '
             . | del(.doh, .lives) |
             .sites = (
               .sites |
@@ -49,17 +59,22 @@ jobs:
                   .
                 end
               ) |
-              map(select(.key as $k | $k != "Doubana" and $k != "Wexconfig" and $k != "WexrenrenGuard" and $k != "mingriyingshi" and $k != "Fujutv" and $k != "SubaibaiGuard" and $k != "csp_Nmys" and $k != "Wexliyuan" and $k != "Wextangdou" and $k != "Wexergeduoduo" and $k != "Wexbaobaobashi" and $k != "Wexbeiwa" and $k != "Wextuxiaobei" and $k != "Pandalivetv" and $k != "Iktv" and $k != "WexDm84" and $k != "WexYsj" and $k != "自定义" and $k != "AList" and $k != "bili" and $k != "biliych" and $k != "Wexqingfengdj" and $k != "Wexxsmp3" and $k != "Wexpsmp3" and $k != "Wexwwe" and $k != "看球" and $k != "926看球" and $k != "1直播" and $k != "Wexduanjuquark" and $k != "Wexduanjuvop" and $k != "Wexduanjuhema" and $k != "WexduanjuvmpGuard" and $k != "Wexduanju001" and $k != "非凡" and $k != "木耳" and $k != "360" and $k != "爱坤"))
+              map(select(.key as $k | $keys_to_delete | index($k) == null))
             )
-          ' wex.json > tmp.json && mv tmp.json wex.json
+          ' 9280.json > tmp.json; then
+            echo "处理 JSON 数据失败！"
+            exit 1
+          fi
+
+          mv tmp.json wex.json
 
           # 检查 JSON 数据是否被修改
-          if [[ $(diff wex.json <(curl -s "${{ env.JSON_URL }}")) ]]; then
+          if ! curl -s "${{ env.JSON_URL }}" | diff - wex.json > /dev/null; then
             echo "JSON 数据已修改，设置输出 changed 为 true。"
-            echo "::set-output name=changed::true"
+            echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "JSON 数据未修改，设置输出 changed 为 false。"
-            echo "::set-output name=changed::false"
+            echo "changed=false" >> $GITHUB_OUTPUT
           fi
           echo "JSON 数据处理完成。"
 
@@ -67,5 +82,8 @@ jobs:
         if: steps.process.outputs.changed == 'true'
         run: |
           echo "开始上传文件到 Kstore..."
-          curl -F "file=@wex.json" "${{ env.UPLOAD_URL }}"
+          if ! curl -F "file=@wex.json" "${{ env.UPLOAD_URL }}"; then
+            echo "文件上传到 Kstore 失败！"
+            exit 1
+          fi
           echo "文件上传到 Kstore 完成。"
