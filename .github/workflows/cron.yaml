@@ -82,4 +82,4 @@ jobs:
       - name: 上传文件到 Kstore
         if: steps.compare_md5.outputs.changed == 'true'
         run: |
-          curl https://upload.kstore.space/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} -F "file=@${{ env.FINAL_JSON }}"
+          curl https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} -F "file=@${{ env.FINAL_JSON }}"
