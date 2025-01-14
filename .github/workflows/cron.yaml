@@ -1,4 +1,4 @@
-name: Wex JSON Upload
+name:  Wex JSON Upload
 
 on:
   push:
@@ -11,8 +11,6 @@ on:
 env:
   KSTORE_ID: ${{ secrets.KSTORE_ID }}
   KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
-  JSON_URL: https://9280.kstore.space/wex.json # 定义 JSON 数据的 URL
-  JSON_FILE_NAME: 9280.json # 定义下载的 JSON 文件名
 
 jobs:
   process_json:
@@ -23,98 +21,46 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 下载 JSON 数据
-        id: download_json
         run: |
           echo "开始下载 JSON 数据..."
-          curl -s "${{ env.JSON_URL }}" > "${{ env.JSON_FILE_NAME }}"
+          curl -s https://9280.kstore.space/wex.json > wex.json
           echo "JSON 数据下载完成。"
-          # 保存原始文件的 hash 值用于后续对比
-          ORIGINAL_HASH=$(sha256sum "${{ env.JSON_FILE_NAME }}" | awk '{print $1}')
-          echo "original_hash=$ORIGINAL_HASH" >> "$GITHUB_OUTPUT"
 
       - name: 处理 JSON 数据
-        id: process_json
+        id: process
         run: |
           echo "开始处理 JSON 数据..."
           jq '
-            . |
-            del(.doh, .lives) |
+            . | del(.doh, .lives) |
             .sites = (
-              .sites | map(
-                 if .key == "Douban" then
+              .sites |
+              map(
+                if .key == "Douban" then
                   .name = "🐮【推荐】🐮"
-                 elif .key == "Wexokconfig" then
-                  .name = "🐮配置中心🐮"
-                 elif .key == "Wexnullname" then
-                  .name = "💓观影┃4K💓"
-                else
-                  .
+                elif .key == "Wexokconfig" then
+                 .name = "🐮配置中心🐮"
+                elif .key == "Wexnullname" then
+                 .name = "💓观影┃4K💓"                 
+               else
+                 .
                 end
-              ) |
-              map(select(
-                  .key |
-                  (
-                   (. != "Doubana") and 
-                   (. != "Wexconfig") and
-                   (. != "WexrenrenGuard") and
-                   (. != "mingriyingshi") and
-                   (. != "Fujutv") and
-                   (. != "SubaibaiGuard") and
-                   (. != "csp_Nmys") and
-                   (. != "Wexliyuan") and
-                   (. != "Wextangdou") and
-                   (. != "Wexergeduoduo") and
-                   (. != "Wexbaobaobashi") and
-                   (. != "Wexbeiwa") and
-                   (. != "Wextuxiaobei") and
-                   (. != "Pandalivetv") and
-                   (. != "Iktv") and
-                   (. != "WexDm84") and
-                   (. != "WexYsj") and
-                   (. != "自定义") and
-                   (. != "AList") and
-                   (. != "bili") and
-                   (. != "biliych") and
-                   (. != "Wexqingfengdj") and
-                   (. != "Wexxsmp3") and
-                   (. != "Wexpsmp3") and
-                   (. != "Wexwwe") and
-                   (. != "看球") and
-                   (. != "926看球") and
-                   (. != "1直播") and
-                   (. != "Wexduanjuquark") and
-                   (. != "Wexduanjuvop") and
-                   (. != "Wexduanjuhema") and
-                   (. != "WexduanjuvmpGuard") and
-                   (. != "Wexduanju001") and
-                   (. != "非凡") and
-                   (. != "木耳") and
-                   (. != "360") and
-                   (. != "爱坤")
-                  )
-                )
-             )
-            )
-          ' "${{ env.JSON_FILE_NAME }}" > tmp.json && mv tmp.json "${{ env.JSON_FILE_NAME }}"
-          echo "JSON 数据处理完成。"
+             ) |
+             map(select(.key != "Doubana" and .key != "Wexconfig" and .key != "WexrenrenGuard" and .key != "mingriyingshi" and .key != "Fujutv" and .key != "SubaibaiGuard" and .key != "csp_Nmys"  and .key != "Wexliyuan" and .key != "Wextangdou" and .key != "Wexergeduoduo" and .key != "Wexbaobaobashi" and .key != "Wexbeiwa" and .key != "Wextuxiaobei" and .key != "Pandalivetv" and .key != "Iktv" and .key != "WexDm84" and .key != "WexYsj" and .key != "自定义" and .key != "AList" and .key != "bili" and .key != "biliych" and .key != "Wexqingfengdj" and .key != "Wexxsmp3" and .key != "Wexpsmp3" and .key != "Wexwwe" and .key != "看球" and .key != "926看球" and .key != "1直播" and .key != "Wexduanjuquark" and .key != "Wexduanjuvop" and .key != "Wexduanjuhema" and .key != "WexduanjuvmpGuard" and .key != "Wexduanju001" and .key != "非凡" and .key != "木耳" and .key != "360" and .key != "爱坤"))
+           )
+          ' wex.json > tmp.json && mv tmp.json wex.json
           
-          # 计算处理后文件的 hash 值
-          PROCESSED_HASH=$(sha256sum "${{ env.JSON_FILE_NAME }}" | awk '{print $1}')
-          echo "processed_hash=$PROCESSED_HASH" >> "$GITHUB_OUTPUT"
-          
-          # 判断文件是否修改，使用 hash 值进行对比
-          if [[ "${{ steps.download_json.outputs.original_hash }}" != "$PROCESSED_HASH" ]]; then
+          if [[ $(diff wex.json <(curl -s https://9280.kstore.space/wex.json)) ]]; then
             echo "JSON 数据已修改，设置输出 changed 为 true。"
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "::set-output name=changed::true"
           else
-            echo "JSON 数据未修改，设置输出 changed 为 false。"
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+             echo "JSON 数据未修改，设置输出 changed 为 false。"
+             echo "::set-output name=changed::false"
           fi
-
+          echo "JSON 数据处理完成。"
 
       - name: 上传文件到 Kstore
-        if: steps.process_json.outputs.changed == 'true'
+        if: steps.process.outputs.changed == 'true'
         run: |
           echo "开始上传文件到 Kstore..."
-          curl -F "file=@${{ env.JSON_FILE_NAME }}" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
+          curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
           echo "文件上传到 Kstore 完成。"
