@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - wex
-  workflow_dispatch: # 手动触发
+  workflow_dispatch:# 手动触发
   schedule:
     - cron: '0 */2 * * *' # 每两个小时触发一次
 
@@ -39,6 +39,8 @@ jobs:
                   .name = "🐮【推荐】🐮"
                 elif .key == "Wexokconfig" then
                  .name = "🐮配置中心🐮"
+                elif .key == "Wexnullname" then
+                 .name = "💓观影┃4K💓"
                  
                else
                  .
