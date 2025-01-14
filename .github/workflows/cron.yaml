@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - wex
-  workflow_dispatch:# 手动触发
+  workflow_dispatch: # 手动触发
   schedule:
     - cron: '0 */2 * * *' # 每两个小时触发一次
 
