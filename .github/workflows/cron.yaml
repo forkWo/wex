@@ -61,4 +61,3 @@ jobs:
         if: steps.process.outputs.changed == 'true'
         run: |
           curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
-          
