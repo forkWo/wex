@@ -9,10 +9,8 @@ on:
     - cron: '0 */2 * * *' # 每两个小时触发一次
 
 env:
-  KSTORE_ID: ${{ secrets.KSTORE_ID }}
-  KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
   JSON_URL: "https://9280.kstore.space/wex.json"
-  UPLOAD_URL: "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
+  UPLOAD_URL: "https://upload.kstore.space/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }}"
 
 jobs:
   process_json:
