@@ -1,4 +1,4 @@
-name:  Wex JSON Upload
+name: Wex JSON Upload
 
 on:
   push:
@@ -23,32 +23,56 @@ jobs:
       - name: 下载 JSON 数据
         run: |
           echo "开始下载 JSON 数据..."
-          curl -s https://9280.kstore.space/wex.json > wex.json
+          curl -s https://9280.kstore.space/wex.json -o 9280.json
           echo "JSON 数据下载完成。"
 
       - name: 处理 JSON 数据
         id: process
         run: |
           echo "开始处理 JSON 数据..."
-          jq '
-            . | del(.doh, .lives) |
-            .sites = (
-              .sites |
-              map(
-                if .key == "Douban" then
-                  .name = "🐮【推荐】🐮"
-                elif .key == "Wexokconfig" then
-                 .name = "🐮配置中心🐮"
-                elif .key == "Wexnullname" then
-                 .name = "💓观影┃4K💓"                 
-               else
-                 .
-                end
-             ) |
-             map(select(.key != "Doubana" and .key != "Wexconfig" and .key != "WexrenrenGuard" and .key != "mingriyingshi" and .key != "Fujutv" and .key != "SubaibaiGuard" and .key != "csp_Nmys"  and .key != "Wexliyuan" and .key != "Wextangdou" and .key != "Wexergeduoduo" and .key != "Wexbaobaobashi" and .key != "Wexbeiwa" and .key != "Wextuxiaobei" and .key != "Pandalivetv" and .key != "Iktv" and .key != "WexDm84" and .key != "WexYsj" and .key != "自定义" and .key != "AList" and .key != "bili" and .key != "biliych" and .key != "Wexqingfengdj" and .key != "Wexxsmp3" and .key != "Wexpsmp3" and .key != "Wexwwe" and .key != "看球" and .key != "926看球" and .key != "1直播" and .key != "Wexduanjuquark" and .key != "Wexduanjuvop" and .key != "Wexduanjuhema" and .key != "WexduanjuvmpGuard" and .key != "Wexduanju001" and .key != "非凡" and .key != "木耳" and .key != "360" and .key != "爱坤"))
-           )
-          ' wex.json > tmp.json && mv tmp.json wex.json
           
+          # 定义要删除的 key
+          declare -a keys_to_remove=(
+            "Doubana" "Wexconfig" "WexrenrenGuard" "mingriyingshi" "Fujutv" "SubaibaiGuard" "csp_Nmys" "Wexliyuan" 
+            "Wextangdou" "Wexergeduoduo" "Wexbaobaobashi" "Wexbeiwa" "Wextuxiaobei" "Pandalivetv" "Iktv" "WexDm84" 
+            "WexYsj" "自定义" "AList" "bili" "biliych" "Wexqingfengdj" "Wexxsmp3" "Wexpsmp3" "Wexwwe" "看球" "926看球" "1直播"
+            "Wexduanjuquark" "Wexduanjuvop" "Wexduanjuhema" "WexduanjuvmpGuard" "Wexduanju001" "非凡" "木耳" "360" "爱坤"
+          )
+          
+          # 定义需要修改 name 的 key
+          declare -a keys_to_rename=(
+             "Douban=🐮【推荐】🐮"
+             "Wexokconfig=🐮配置中心🐮"
+             "Wexnullname=💓观影┃4K💓"
+          )
+          
+          # 将 keys_to_remove 转换为 jq 的 filter 字符串
+          remove_filter=$(IFS='|'; echo "${keys_to_remove[*]}" | sed 's/[^|]*/"&"/g' | sed 's/|/ or .key == /g' )
+          
+          # 将 keys_to_rename 转换为 jq 的 filter 字符串
+          rename_filter=$(IFS=' ';
+            echo "${keys_to_rename[*]}" |
+            while IFS='=' read -r key value; do
+              echo "if .key == \"$key\" then .name = \"$value\" else . end"
+            done |
+            paste -s -d " " -
+          )
+
+          # 执行 jq 命令
+          if ! jq "
+            . | del(.doh, .lives) |
+            .sites |= (
+              map(
+                 $rename_filter
+                ) |
+                map(select(not ( .key == $remove_filter )) )
+              )
+          " 9280.json > tmp.json; then
+            echo "jq 命令执行失败"
+            exit 1
+          fi
+          mv tmp.json wex.json
+
           if [[ $(diff wex.json <(curl -s https://9280.kstore.space/wex.json)) ]]; then
             echo "JSON 数据已修改，设置输出 changed 为 true。"
             echo "::set-output name=changed::true"
