@@ -26,6 +26,12 @@ jobs:
           curl -s https://9280.kstore.space/wex.json > wex.json
           echo "JSON 数据下载完成。"
 
+      - name: 保存原始 JSON 数据
+        run: |
+          echo "保存原始 JSON 数据..."
+          cp wex.json original_wex.json
+          echo "原始 JSON 数据保存完成。"
+          
       - name: 处理 JSON 数据
         id: process
         run: |
@@ -39,8 +45,8 @@ jobs:
                   .name = "🐮【推荐】🐮"
                 elif .key == "Wexokconfig" then
                   .name = "🐮配置中心🐮"
-                elif .key == "Wexnullname" then
-                   .name = "💓观影┃4K💓"
+                 elif .key == "Wexnullname" then
+                  .name = "💓观影┃4K💓"
                 else
                  .
                 end
@@ -49,10 +55,10 @@ jobs:
               .sites = (.sites | map(select(.key | ($keys_to_remove | contains(.) | not))))
           ' wex.json  <> wex.json
           
-          if [[ $(diff wex.json <(curl -s https://9280.kstore.space/wex.json)) ]]; then
+          if [[ $(diff original_wex.json wex.json) ]]; then
             echo "JSON 数据已修改，设置输出 changed 为 true。"
             echo "::set-output name=changed::true"
-            else
+          else
              echo "JSON 数据未修改，设置输出 changed 为 false。"
              echo "JSON 数据未修改，不进行上传。"
              echo "::set-output name=changed::false"
