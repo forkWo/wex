@@ -19,8 +19,8 @@ jobs:
 
       - name: Process JSON data
         run: |
-          jq '. | del(.lives, .doh) | .Sites = (.Sites | map(select(.key != "Doubana" and .key != "Wexconfig"))) | .Sites = (.Sites | map(if .name == "公众号：王二小放牛娃" then .name = "推荐" else . end)) | .Sites = (.Sites | map(if .name == "影视专用┃配置中心" then .name = "配置中心" else . end))' wex.json > processed_wex.json
-          
+          jq '. | del(.lives, .doh) | if .Sites then .Sites = (.Sites | map(select(.key != "Doubana" and .key != "Wexconfig"))) | .Sites = (.Sites | map(if .name == "公众号：王二小放牛娃" then .name = "推荐" else . end)) | .Sites = (.Sites | map(if .name == "影视专用┃配置中心" then .name = "配置中心" else . end)) else . end' wex.json > processed_wex.json
+
       - name: Configure Git
         run: |
           git config --global user.email "actions@github.com"
