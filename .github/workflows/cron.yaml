@@ -19,7 +19,23 @@ jobs:
 
       - name: Process JSON data
         run: |
-          jq '. | del(.lives, .doh) | if .Sites then .Sites = (.Sites | map(select(.key != "Doubana" and .key != "Wexconfig"))) | .Sites = (.Sites | map(if .name == "🐮【公众号：王二小放牛娃】🐮" then .name = "推荐" else . end)) | .Sites = (.Sites | map(if .name == "🐮通用类型┃配置中心🐮" then .name = "配置中心" else . end)) else . end' wex.json > processed_wex.json
+          jq '
+            . | del(.doh, .lives) |
+            .sites = (
+              .sites |
+              map(
+                if .key == "Douban" then
+                  .name = "🐮【推荐】🐮"
+                elif .key == "Wexokconfig" then
+                 .name = "🐮配置中心🐮"
+                 
+               else
+                 .
+                end
+             ) |
+             map(select(.key != "Doubana" and .key != "Wexconfig" and .key != "WexrenrenGuard" and .key != "mingriyingshi" and .key != "Fujutv" and .key != "SubaibaiGuard" and .key != "csp_Nmys"  and .key != "Wexliyuan" and .key != "Wextangdou" and .key != "Wexergeduoduo" and .key != "Wexbaobaobashi" and .key != "Wexbeiwa" and .key != "Wextuxiaobei" and .key != "Pandalivetv" and .key != "Iktv" and .key != "WexDm84" and .key != "WexYsj" and .key != "自定义" and .key != "AList" and .key != "bili" and .key != "biliych" and .key != "Wexqingfengdj" and .key != "Wexxsmp3" and .key != "Wexpsmp3" and .key != "Wexwwe" and .key != "看球" and .key != "926看球" and .key != "1直播"  and .key != "Wexduanjuquark" and .key != "Wexduanjuvop" and .key != "Wexduanjuhema" and .key != "WexduanjuvmpGuard" and .key != "Wexduanju001" and .key != "非凡" and .key != "木耳" and .key != "360" and .key != "爱坤" ))
+           )
+          ' wex.json > cs.json
 
       - name: Configure Git
         run: |
@@ -39,8 +55,8 @@ jobs:
 
       - name: Commit changes
         run: |
-          git add processed_wex.json
-          git commit -m "Update processed wex.json" || echo "No changes to commit"
+          git add cs.json
+          git commit -m "Update cs.json" || echo "No changes to commit"
 
       - name: Push changes to ts branch
         uses: ad-m/github-push-action@master
