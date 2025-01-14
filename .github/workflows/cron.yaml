@@ -83,8 +83,4 @@ jobs:
       - name: 上传文件到 Kstore
         if: steps.compare_md5.outputs.changed == 'true'
         run: |
-          if ! curl -F "file=@${{ env.FINAL_JSON }}" "${{ env.UPLOAD_URL }}"; then
-            echo "::error::文件上传到 Kstore 失败！"
-            exit 1
-          fi
-          echo "文件上传成功。"
+          curl -F "file=@${{ env.FINAL_JSON }}" "${{ env.UPLOAD_URL }}"
