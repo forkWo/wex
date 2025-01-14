@@ -22,6 +22,7 @@ jobs:
 
       - name: 下载 JSON 数据
         run: |
+          echo "开始下载 JSON 数据..."
           curl -s https://9280.kstore.space/wex.json -o 9280.json
           echo "JSON 数据下载完成。"
 
@@ -29,7 +30,11 @@ jobs:
         id: process
         run: |
           echo "开始处理 JSON 数据..."
-          jq '
+          # 使用 jq 命令处理 JSON 数据，进行以下操作：
+          # 1. 删除 .doh 和 .lives 字段
+          # 2. 修改 .sites 数组中特定 key 的 name 字段
+          # 3. 移除 .sites 数组中特定 key 的对象
+          jq -c '
             . | del(.doh, .lives) |
             .sites = (
               .sites |
@@ -46,13 +51,14 @@ jobs:
              ) |
              map(select(.key != "Doubana" and .key != "Wexconfig" and .key != "WexrenrenGuard" and .key != "mingriyingshi" and .key != "Fujutv" and .key != "SubaibaiGuard" and .key != "csp_Nmys"  and .key != "Wexliyuan" and .key != "Wextangdou" and .key != "Wexergeduoduo" and .key != "Wexbaobaobashi" and .key != "Wexbeiwa" and .key != "Wextuxiaobei" and .key != "Pandalivetv" and .key != "Iktv" and .key != "WexDm84" and .key != "WexYsj" and .key != "自定义" and .key != "AList" and .key != "bili" and .key != "biliych" and .key != "Wexqingfengdj" and .key != "Wexxsmp3" and .key != "Wexpsmp3" and .key != "Wexwwe" and .key != "看球" and .key != "926看球" and .key != "1直播" and .key != "Wexduanjuquark" and .key != "Wexduanjuvop" and .key != "Wexduanjuhema" and .key != "WexduanjuvmpGuard" and .key != "Wexduanju001" and .key != "非凡" and .key != "木耳" and .key != "360" and .key != "爱坤"))
            )
-          ' 9280.json > tmp.json && mv tmp.json wex.json
+          ' 9280.json > wex.json
 
           # 比较修改后的 wex.json 和在线 wex.json，以判断是否需要上传
           if [[ $(diff wex.json <(curl -s https://9280.kstore.space/wex.json)) ]]; then
             echo "JSON 数据已修改，设置输出 changed 为 true。"
             echo "::set-output name=changed::true"
           else
+            echo "JSON 数据未修改，设置输出 changed 为 false。"
             echo "JSON 数据未修改，无需上传。"
              echo "::set-output name=changed::false"
           fi
@@ -62,4 +68,4 @@ jobs:
         if: steps.process.outputs.changed == 'true'
         run: |
           curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
-          echo "文件上传到 Kstore 完成。"
+          
