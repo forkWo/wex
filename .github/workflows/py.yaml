@@ -1,104 +1,44 @@
-name: Wex JSON Upload (Python)
+name: Delete Old Workflow Runs
 
 on:
-  push:
-    branches:
-      - wex
-  workflow_dispatch:
   schedule:
-    - cron: '0 */2 * * *' # 每两个小时触发一次
-
-env:
-  JSON_URL: "https://9280.kstore.space/wex.json"
-  FINAL_JSON: "wex.json" # 最终文件命名为 wex.json
+    - cron: '0 * * * *'  # 每小时 UTC 时间 00 分执行
+  workflow_dispatch: # 添加手动触发 workflow 的选项
+    inputs:
+      hours_to_keep:
+        description: "保留 workflow runs 的小时数"
+        required: false
+        default: 24
 
 jobs:
-  process_json:
+  delete-runs:
     runs-on: ubuntu-latest
-
     steps:
-      # 第一步：设置 Python 环境
-      - name: 设置 Python
-        uses: actions/setup-python@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup GitHub CLI
+        uses: actions/setup-go@v3
         with:
-          python-version: "3.x"
+          go-version: '>=1.20.0'
 
-      # 第二步：下载 JSON 文件
-      - name: 下载 JSON 数据
-        id: download_json
+      - name: Install GitHub CLI
         run: |
-          curl -s "${{ env.JSON_URL }}" -o 9280.json
-          ORIGINAL_MD5=$(md5sum 9280.json | awk '{print $1}')
-          echo "原始 JSON 文件的 MD5: $ORIGINAL_MD5"
-          echo "ORIGINAL_MD5=$ORIGINAL_MD5" >> $GITHUB_ENV
+          go install github.com/cli/cli/v2/cmd/gh@latest
 
-      # 第三步：运行 Python 脚本处理 JSON 数据
-      - name: 运行 Python 脚本处理 JSON
-        id: modify_json
+      - name: Authenticate with GitHub
         run: |
-          python3 <<EOF
-          import json
-          import hashlib
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
-          # 输入和输出文件路径
-          input_file = "9280.json"
-          output_file = "${{ env.FINAL_JSON }}"
-
-          # 需要删除的键列表
-          keys_to_delete = [
-              "Doubana", "Wexconfig", "WexrenrenGuard", "mingriyingshi", "Fujutv", "SubaibaiGuard", "csp_Nmys",
-              "Wexliyuan", "Wextangdou", "Wexergeduoduo", "Wexbaobaobashi", "Wexbeiwa", "Wextuxiaobei", "Pandalivetv",
-              "Iktv", "WexDm84", "WexYsj", "自定义", "AList", "bili", "biliych", "Wexqingfengdj", "Wexxsmp3", "Wexpsmp3",
-              "Wexwwe", "看球", "926看球", "1直播", "Wexduanjuquark", "Wexduanjuvop", "Wexduanjuhema", "WexduanjuvmpGuard",
-              "Wexduanju001", "非凡", "木耳", "360", "爱坤"
-          ]
-
-          # 读取原始 JSON 文件
-          with open(input_file, "r", encoding="utf-8") as f:
-              data = json.load(f)
-
-          # 删除不需要的键
-          if "doh" in data:
-              del data["doh"]
-          if "lives" in data:
-              del data["lives"]
-
-          # 修改特定键的名称
-          for site in data.get("sites", []):
-              if site.get("key") == "Douban":
-                  site["name"] = "🐮【推荐】🐮"
-              elif site.get("key") == "Wexokconfig":
-                  site["name"] = "🐮配置中心🐮"
-              elif site.get("key") == "Wexnullname":
-                  site["name"] = "💓观影┃4K💓"
-
-          # 过滤掉不需要的站点
-          data["sites"] = [site for site in data.get("sites", []) if site.get("key") not in keys_to_delete]
-
-          # 保存修改后的 JSON 文件
-          with open(output_file, "w", encoding="utf-8") as f:
-              json.dump(data, f, ensure_ascii=False, indent=2)
-
-          print("JSON 文件处理完成，保存为:", output_file)
-          EOF
-
-      # 第四步：对比 MD5 并判断是否需要上传
-      - name: 对比 MD5 并判断是否需要上传
-        id: compare_md5
+      - name: Delete old Workflow runs
         run: |
-          PROCESSED_MD5=$(md5sum "${{ env.FINAL_JSON }}" | awk '{print $1}')
-          echo "处理后 JSON 文件的 MD5: $PROCESSED_MD5"
-
-          if [[ "$ORIGINAL_MD5" != "$PROCESSED_MD5" ]]; then
-              echo "JSON 数据已修改。"
-              echo "changed=true" >> $GITHUB_OUTPUT
-          else
-              echo "JSON 数据未修改，无需上传。"
-              echo "changed=false" >> $GITHUB_OUTPUT
-          fi
-
-      # 第五步：上传文件到 Kstore（仅在 changed 为 true 时执行）
-      - name: 上传文件到 Kstore
-        if: steps.compare_md5.outputs.changed == 'true'
-        run: |
-          curl https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} -F "file=@${{ env.FINAL_JSON }}"
+          HOURS_TO_KEEP=${{ github.event.inputs.hours_to_keep || 24 }}  # 默认保留 24 小时的 runs
+          echo "开始删除 ${HOURS_TO_KEEP} 小时之前的 Workflow Runs"
+          CUTOFF_DATE=$(date -u -d "${HOURS_TO_KEEP} hours ago" +%Y-%m-%dT%H:%M:%SZ)
+          echo "Cutoff date: ${CUTOFF_DATE}"
+          gh run list --repo ${{ github.repository }}  --json '[]' |
+          jq -r '.[] | select(.createdAt < "'"${CUTOFF_DATE}"'") | .id' |
+          while read RUN_ID; do
+            echo "Deleting run: ${RUN_ID}"
+            gh run delete "${RUN_ID}" --repo ${{ github.repository }}
+          done
