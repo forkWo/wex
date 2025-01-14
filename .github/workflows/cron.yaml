@@ -31,7 +31,13 @@ jobs:
           echo "开始处理 JSON 数据..."
 
           # 定义需要过滤的键值对
-          FILTER_KEYS=("Doubana" "Wexconfig" "WexrenrenGuard" "mingriyingshi" "Fujutv" "SubaibaiGuard" "csp_Nmys" "Wexliyuan" "Wextangdou" "Wexergeduoduo" "Wexbaobaobashi" "Wexbeiwa" "Wextuxiaobei" "Pandalivetv" "Iktv" "WexDm84" "WexYsj" "自定义" "AList" "bili" "biliych" "Wexqingfengdj" "Wexxsmp3" "Wexpsmp3" "Wexwwe" "看球" "926看球" "1直播" "Wexduanjuquark" "Wexduanjuvop" "Wexduanjuhema" "WexduanjuvmpGuard" "Wexduanju001" "非凡" "木耳" "360" "爱坤")
+          FILTER_KEYS=(
+            "Doubana" "Wexconfig" "WexrenrenGuard" "mingriyingshi" "Fujutv" "SubaibaiGuard" "csp_Nmys" 
+            "Wexliyuan" "Wextangdou" "Wexergeduoduo" "Wexbaobaobashi" "Wexbeiwa" "Wextuxiaobei" 
+            "Pandalivetv" "Iktv" "WexDm84" "WexYsj" "自定义" "AList" "bili" "biliych" "Wexqingfengdj" 
+            "Wexxsmp3" "Wexpsmp3" "Wexwwe" "看球" "926看球" "1直播" "Wexduanjuquark" "Wexduanjuvop" 
+            "Wexduanjuhema" "WexduanjuvmpGuard" "Wexduanju001" "非凡" "木耳" "360" "爱坤"
+          )
 
           # 定义 jq 处理逻辑
           JQ_PROCESS_COMMAND='
@@ -52,20 +58,20 @@ jobs:
             )
           '
 
-          # 处理 JSON 数据
+          # 处理本地 JSON 数据
           jq -c --argjson filter_keys "$(echo "${FILTER_KEYS[@]}" | jq -R 'split(" ")')" "$JQ_PROCESS_COMMAND" 9280.json > wex.json
 
-          # Download and process online JSON for comparison
+          # 下载并处理在线 JSON 数据
           ONLINE_JSON=$(curl -s https://9280.kstore.space/wex.json)
           PROCESSED_ONLINE_JSON=$(echo "$ONLINE_JSON" | jq -c --argjson filter_keys "$(echo "${FILTER_KEYS[@]}" | jq -R 'split(" ")')" "$JQ_PROCESS_COMMAND")
 
-          # Compare wex.json with processed_online_json
-          if diff <(cat wex.json) <(echo "$PROCESSED_ONLINE_JSON") > /dev/null ; then
+          # 比较本地和在线 JSON 数据
+          if diff <(echo "$PROCESSED_ONLINE_JSON") <(cat wex.json) > /dev/null; then
             echo "JSON 数据未修改，无需上传。"
-            echo "::set-output name=changed::false"
+            echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "JSON 数据已修改，设置输出 changed 为 true。"
-            echo "::set-output name=changed::true"
+            echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
           echo "JSON 数据处理完成。"
