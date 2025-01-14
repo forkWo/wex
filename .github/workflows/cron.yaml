@@ -65,7 +65,7 @@ jobs:
               map(
                  $rename_filter
                 ) |
-                map(select(!( .key == \"$remove_filter\" )) )
+                map(select(!( .key == $remove_filter )) )
               )
           " 9280.json > tmp.json; then
             echo "jq 命令执行失败"
