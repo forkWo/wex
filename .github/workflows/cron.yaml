@@ -31,7 +31,7 @@ jobs:
         run: |
           echo "开始处理 JSON 数据..."
           keys_to_remove='["Doubana", "Wexconfig", "WexrenrenGuard", "mingriyingshi", "Fujutv", "SubaibaiGuard", "csp_Nmys", "Wexliyuan", "Wextangdou", "Wexergeduoduo", "Wexbaobaobashi", "Wexbeiwa", "Wextuxiaobei", "Pandalivetv", "Iktv", "WexDm84", "WexYsj", "自定义", "AList", "bili", "biliych", "Wexqingfengdj", "Wexxsmp3", "Wexpsmp3", "Wexwwe", "看球", "926看球", "1直播", "Wexduanjuquark", "Wexduanjuvop", "Wexduanjuhema", "WexduanjuvmpGuard", "Wexduanju001", "非凡", "木耳", "360", "爱坤"]'
-          jq '
+          jq --arg keys_to_remove "$keys_to_remove" '
             . | del(.doh, .lives) |
             .sites |= (
               map(
@@ -46,7 +46,7 @@ jobs:
                 end
               )
              ) |
-              .sites = (.sites | map(select(.key | (keys_to_remove | contains(.) | not))))
+              .sites = (.sites | map(select(.key | ($keys_to_remove | contains(.) | not))))
           ' wex.json  <> wex.json
           
           if [[ $(diff wex.json <(curl -s https://9280.kstore.space/wex.json)) ]]; then
