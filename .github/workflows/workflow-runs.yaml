@@ -1,0 +1,25 @@
+name: Delete Workflow Runs
+
+on:
+  workflow_dispatch: # 允许手动触发
+  schedule:
+    - cron: '0 0 * * *' # 每天午夜运行（可选）
+
+jobs:
+  delete-workflow-runs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Delete all workflow runs
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }} # 使用默认的 GITHUB_TOKEN
+          REPO_OWNER: ${{ github.forkwo }} # 仓库所有者
+          REPO_NAME: ${{ github.box }} # 仓库名称
+        run: |
+          curl -X DELETE \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/actions/runs"
