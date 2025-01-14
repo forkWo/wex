@@ -1,10 +1,10 @@
-name:  Wex JSON Upload
+name: Wex JSON Upload
 
 on:
   push:
     branches:
       - wex
-  workflow_dispatch: # 手动触发
+  workflow_dispatch:
   schedule:
     - cron: '0 */2 * * *' # 每两个小时触发一次
 
@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
-          
+
       - name: 下载 JSON 数据
         run: |
           echo "开始下载 JSON 数据..."
@@ -40,8 +40,7 @@ jobs:
                 elif .key == "Wexokconfig" then
                  .name = "🐮配置中心🐮"
                 elif .key == "Wexnullname" then
-                 .name = "💓观影┃4K💓"
-                 
+                 .name = "💓观影┃4K💓"                 
                else
                  .
                 end
@@ -63,5 +62,12 @@ jobs:
         if: steps.process.outputs.changed == 'true'
         run: |
           echo "开始上传文件到 Kstore..."
-          curl -F "file=@wex.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
+          curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
           echo "文件上传到 Kstore 完成。"
+
+      - name: 等待 Kstore 缓存更新
+        if: steps.process.outputs.changed == 'true'
+        run: |
+          echo "等待 10 秒，让 Kstore 缓存更新..."
+          sleep 10
+          echo "等待完成。"
