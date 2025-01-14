@@ -25,7 +25,6 @@ jobs:
           if ! curl -s "${{ env.JSON_URL }}" -o 9280.json; then
             echo "下载 JSON 数据失败！" && exit 1
           fi
-          echo "JSON 数据下载完成。"
 
       - name: 处理 JSON 数据
         id: process
@@ -64,15 +63,15 @@ jobs:
           mv tmp.json wex.json
           
           if ! curl -s "${{ env.JSON_URL }}" | diff - wex.json > /dev/null; then
-            echo "JSON 数据已修改，设置输出 changed 为 true。" && echo "changed=true" >> $GITHUB_OUTPUT
+             echo "JSON 数据未修改，无需上传。" && echo "changed=false" >> $GITHUB_OUTPUT
           else
-            echo "JSON 数据未修改，无需上传。" && echo "changed=false" >> $GITHUB_OUTPUT
+            echo "JSON 数据已修改，设置输出 changed 为 true。" && echo "changed=true" >> $GITHUB_OUTPUT
           fi
           echo "JSON 数据处理完成。"
 
       - name: 上传文件到 Kstore
         if: steps.process.outputs.changed == 'true'
         run: |
-          echo "开始上传文件到 Kstore..."
-          curl -F "file=@wex.json" "${{ env.UPLOAD_URL }}" || echo "文件上传到 Kstore 失败！" && exit 1
-          echo "文件上传到 Kstore 完成。"
+          if ! curl -F "file=@wex.json" "${{ env.UPLOAD_URL }}"; then
+            echo "文件上传到 Kstore 失败！" && exit 1
+          fi
