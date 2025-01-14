@@ -6,7 +6,7 @@ on:
       - wex
   workflow_dispatch:
   schedule:
-    - cron: '*/55 * * * *'  # 每55分钟执行一次
+#    - cron: '*/55 * * * *'  # 每55分钟执行一次
 
 jobs:
   update-spider:
