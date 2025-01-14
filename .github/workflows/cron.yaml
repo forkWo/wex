@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: '0 0 * * *' # 每天 00:00 触发 (UTC 时间)
 
+env:
+  KSTORE_ID: ${{ secrets.KSTORE_ID }}
+  KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
+
 jobs:
   process_json:
     runs-on: ubuntu-latest
@@ -18,6 +22,7 @@ jobs:
           curl -s https://9280.kstore.space/wex.json > wex.json
 
       - name: Process JSON data
+        id: process
         run: |
           jq '
             . | del(.doh, .lives) |
@@ -33,10 +38,16 @@ jobs:
                  .
                 end
              ) |
-             map(select(.key != "Doubana" and .key != "Wexconfig" and .key != "WexrenrenGuard" and .key != "mingriyingshi" and .key != "Fujutv" and .key != "SubaibaiGuard" and .key != "csp_Nmys"  and .key != "Wexliyuan" and .key != "Wextangdou" and .key != "Wexergeduoduo" and .key != "Wexbaobaobashi" and .key != "Wexbeiwa" and .key != "Wextuxiaobei" and .key != "Pandalivetv" and .key != "Iktv" and .key != "WexDm84" and .key != "WexYsj" and .key != "自定义" and .key != "AList" and .key != "bili" and .key != "biliych" and .key != "Wexqingfengdj" and .key != "Wexxsmp3" and .key != "Wexpsmp3" and .key != "Wexwwe" and .key != "看球" and .key != "926看球" and .key != "1直播"  and .key != "Wexduanjuquark" and .key != "Wexduanjuvop" and .key != "Wexduanjuhema" and .key != "WexduanjuvmpGuard" and .key != "Wexduanju001" and .key != "非凡" and .key != "木耳" and .key != "360" and .key != "爱坤" ))
+             map(select(.key != "Doubana" and .key != "Wexconfig" and .key != "WexrenrenGuard" and .key != "mingriyingshi" and .key != "Fujutv" and .key != "SubaibaiGuard" and .key != "csp_Nmys"  and .key != "Wexliyuan" and .key != "Wextangdou" and .key != "Wexergeduoduo" and .key != "Wexbaobaobashi" and .key != "Wexbeiwa" and .key != "Wextuxiaobei" and .key != "Pandalivetv" and .key != "Iktv" and .key != "WexDm84" and .key != "WexYsj" and .key != "自定义" and .key != "AList" and .key != "bili" and .key != "biliych" and .key != "Wexqingfengdj" and .key != "Wexxsmp3" and .key != "Wexpsmp3" and .key != "Wexwwe" and .key != "看球" and .key != "926看球" and .key != "1直播" and .key != "Wexduanjuquark" and .key != "Wexduanjuvop" and .key != "Wexduanjuhema" and .key != "WexduanjuvmpGuard" and .key != "Wexduanju001" and .key != "非凡" and .key != "木耳" and .key != "360" and .key != "爱坤"))
            )
-          ' wex.json > cs.json
-
+          ' wex.json > processed_wex.json
+          
+          if [[ $(diff wex.json processed_wex.json) ]]; then
+            echo "::set-output name=changed::true"
+          else
+            echo "::set-output name=changed::false"
+          fi
+        
       - name: Configure Git
         run: |
           git config --global user.email "actions@github.com"
@@ -55,8 +66,8 @@ jobs:
 
       - name: Commit changes
         run: |
-          git add cs.json
-          git commit -m "Update cs.json" || echo "No changes to commit"
+          git add processed_wex.json
+          git commit -m "Update processed wex.json" || echo "No changes to commit"
 
       - name: Push changes to ts branch
         uses: ad-m/github-push-action@master
@@ -64,3 +75,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ts
           force: true
+    
+      - name: Upload file to Kstore
+        if: steps.process.outputs.changed == 'true'
+        run: |
+          curl -F "file=@processed_wex.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}" || exit 1
