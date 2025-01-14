@@ -11,6 +11,8 @@ on:
 env:
   KSTORE_ID: ${{ secrets.KSTORE_ID }}
   KSTORE_TOKEN: ${{ secrets.KSTORE_TOKEN }}
+  JSON_URL: "https://9280.kstore.space/wex.json"
+  UPLOAD_URL: "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
 
 jobs:
   process_json:
@@ -22,27 +24,22 @@ jobs:
 
       - name: 下载 JSON 数据
         run: |
-          curl -s https://9280.kstore.space/wex.json -o 9280.json
+          echo "开始下载 JSON 数据..."
+          curl -s "${{ env.JSON_URL }}" > wex.json
+          echo "JSON 数据下载完成。"
 
       - name: 处理 JSON 数据
         id: process
         run: |
-          set -e
           echo "开始处理 JSON 数据..."
+          # 定义需要删除的键和需要修改的键
+          KEYS_TO_DELETE=("Doubana" "Wexconfig" "WexrenrenGuard" "mingriyingshi" "Fujutv" "SubaibaiGuard" "csp_Nmys" "Wexliyuan" "Wextangdou" "Wexergeduoduo" "Wexbaobaobashi" "Wexbeiwa" "Wextuxiaobei" "Pandalivetv" "Iktv" "WexDm84" "WexYsj" "自定义" "AList" "bili" "biliych" "Wexqingfengdj" "Wexxsmp3" "Wexpsmp3" "Wexwwe" "看球" "926看球" "1直播" "Wexduanjuquark" "Wexduanjuvop" "Wexduanjuhema" "WexduanjuvmpGuard" "Wexduanju001" "非凡" "木耳" "360" "爱坤")
 
-          # 定义需要过滤的键值对
-          FILTER_KEYS=(
-            "Doubana" "Wexconfig" "WexrenrenGuard" "mingriyingshi" "Fujutv" "SubaibaiGuard" "csp_Nmys" 
-            "Wexliyuan" "Wextangdou" "Wexergeduoduo" "Wexbaobaobashi" "Wexbeiwa" "Wextuxiaobei" 
-            "Pandalivetv" "Iktv" "WexDm84" "WexYsj" "自定义" "AList" "bili" "biliych" "Wexqingfengdj" 
-            "Wexxsmp3" "Wexpsmp3" "Wexwwe" "看球" "926看球" "1直播" "Wexduanjuquark" "Wexduanjuvop" 
-            "Wexduanjuhema" "WexduanjuvmpGuard" "Wexduanju001" "非凡" "木耳" "360" "爱坤"
-          )
-
-          # 定义 jq 处理逻辑
-          JQ_PROCESS_COMMAND='
-            del(.doh, .lives) |
-            .sites |= (
+          # 使用 jq 处理 JSON 数据
+          jq '
+            . | del(.doh, .lives) |
+            .sites = (
+              .sites |
               map(
                 if .key == "Douban" then
                   .name = "🐮【推荐】🐮"
@@ -54,29 +51,23 @@ jobs:
                   .
                 end
               ) |
-              map(select(.key as $k | $filter_keys | index($k) == null))
+              map(select(.key as $k | $k != "Doubana" and $k != "Wexconfig" and $k != "WexrenrenGuard" and $k != "mingriyingshi" and $k != "Fujutv" and $k != "SubaibaiGuard" and $k != "csp_Nmys" and $k != "Wexliyuan" and $k != "Wextangdou" and $k != "Wexergeduoduo" and $k != "Wexbaobaobashi" and $k != "Wexbeiwa" and $k != "Wextuxiaobei" and $k != "Pandalivetv" and $k != "Iktv" and $k != "WexDm84" and $k != "WexYsj" and $k != "自定义" and $k != "AList" and $k != "bili" and $k != "biliych" and $k != "Wexqingfengdj" and $k != "Wexxsmp3" and $k != "Wexpsmp3" and $k != "Wexwwe" and $k != "看球" and $k != "926看球" and $k != "1直播" and $k != "Wexduanjuquark" and $k != "Wexduanjuvop" and $k != "Wexduanjuhema" and $k != "WexduanjuvmpGuard" and $k != "Wexduanju001" and $k != "非凡" and $k != "木耳" and $k != "360" and $k != "爱坤"))
             )
-          '
+          ' wex.json > tmp.json && mv tmp.json wex.json
 
-          # 处理本地 JSON 数据
-          jq -c --argjson filter_keys "$(echo "${FILTER_KEYS[@]}" | jq -R 'split(" ")')" "$JQ_PROCESS_COMMAND" 9280.json > wex.json
-
-          # 下载并处理在线 JSON 数据
-          ONLINE_JSON=$(curl -s https://9280.kstore.space/wex.json)
-          PROCESSED_ONLINE_JSON=$(echo "$ONLINE_JSON" | jq -c --argjson filter_keys "$(echo "${FILTER_KEYS[@]}" | jq -R 'split(" ")')" "$JQ_PROCESS_COMMAND")
-
-          # 使用 jq 直接比较 JSON 数据
-          if echo "$PROCESSED_ONLINE_JSON" | jq --sort-keys . | diff - <(jq --sort-keys . wex.json) > /dev/null; then
-            echo "JSON 数据未修改，无需上传。"
-            echo "changed=false" >> $GITHUB_OUTPUT
-          else
+          # 检查 JSON 数据是否被修改
+          if [[ $(diff wex.json <(curl -s "${{ env.JSON_URL }}")) ]]; then
             echo "JSON 数据已修改，设置输出 changed 为 true。"
-            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "::set-output name=changed::true"
+          else
+            echo "JSON 数据未修改，设置输出 changed 为 false。"
+            echo "::set-output name=changed::false"
           fi
-
           echo "JSON 数据处理完成。"
 
       - name: 上传文件到 Kstore
         if: steps.process.outputs.changed == 'true'
         run: |
-          curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
+          echo "开始上传文件到 Kstore..."
+          curl -F "file=@wex.json" "${{ env.UPLOAD_URL }}"
+          echo "文件上传到 Kstore 完成。"
