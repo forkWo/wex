@@ -27,16 +27,16 @@ jobs:
       - name: 处理 JSON 数据
         id: process
         run: |
+          set -e
           echo "开始处理 JSON 数据..."
-          
+
           # 定义需要过滤的键值对
           FILTER_KEYS=("Doubana" "Wexconfig" "WexrenrenGuard" "mingriyingshi" "Fujutv" "SubaibaiGuard" "csp_Nmys" "Wexliyuan" "Wextangdou" "Wexergeduoduo" "Wexbaobaobashi" "Wexbeiwa" "Wextuxiaobei" "Pandalivetv" "Iktv" "WexDm84" "WexYsj" "自定义" "AList" "bili" "biliych" "Wexqingfengdj" "Wexxsmp3" "Wexpsmp3" "Wexwwe" "看球" "926看球" "1直播" "Wexduanjuquark" "Wexduanjuvop" "Wexduanjuhema" "WexduanjuvmpGuard" "Wexduanju001" "非凡" "木耳" "360" "爱坤")
 
-          # 处理 JSON 数据
-          jq -c --argjson filter_keys "$(echo "${FILTER_KEYS[@]}" | jq -R 'split(" ")')" '
-            . | del(.doh, .lives) |
-            .sites = (
-              .sites |
+          # 定义 jq 处理逻辑
+          JQ_PROCESS_COMMAND='
+            del(.doh, .lives) |
+            .sites |= (
               map(
                 if .key == "Douban" then
                   .name = "🐮【推荐】🐮"
@@ -50,30 +50,27 @@ jobs:
               ) |
               map(select(.key as $k | $filter_keys | index($k) == null))
             )
-          ' 9280.json > wex.json
+          '
 
-          # 比较修改后的 wex.json 和在线 wex.json，以判断是否需要上传
-          if [[ $(diff wex.json <(curl -s https://9280.kstore.space/wex.json)) ]]; then
-            echo "JSON 数据已修改，设置输出 changed 为 true。"
-            echo "::set-output name=changed::true"
-          else
+          # 处理 JSON 数据
+          jq -c --argjson filter_keys "$(echo "${FILTER_KEYS[@]}" | jq -R 'split(" ")')" "$JQ_PROCESS_COMMAND" 9280.json > wex.json
+
+          # Download and process online JSON for comparison
+          ONLINE_JSON=$(curl -s https://9280.kstore.space/wex.json)
+          PROCESSED_ONLINE_JSON=$(echo "$ONLINE_JSON" | jq -c --argjson filter_keys "$(echo "${FILTER_KEYS[@]}" | jq -R 'split(" ")')" "$JQ_PROCESS_COMMAND")
+
+          # Compare wex.json with processed_online_json
+          if diff <(cat wex.json) <(echo "$PROCESSED_ONLINE_JSON") > /dev/null ; then
             echo "JSON 数据未修改，无需上传。"
             echo "::set-output name=changed::false"
-          fi
-          echo "JSON 数据处理完成。"
-
-          # 比较修改后的 wex.json 和在线 wex.json，以判断是否需要上传
-          if [[ $(diff wex.json <(curl -s https://9280.kstore.space/wex.json)) ]]; then
+          else
             echo "JSON 数据已修改，设置输出 changed 为 true。"
             echo "::set-output name=changed::true"
-          else
-            echo "JSON 数据未修改，无需上传。"
-             echo "::set-output name=changed::false"
           fi
+
           echo "JSON 数据处理完成。"
 
       - name: 上传文件到 Kstore
         if: steps.process.outputs.changed == 'true'
         run: |
           curl -F "file=@wex.json" "https://upload.kstore.space/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
-          
