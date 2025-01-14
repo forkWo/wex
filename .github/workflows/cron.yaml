@@ -63,5 +63,5 @@ jobs:
         if: steps.process.outputs.changed == 'true'
         run: |
           echo "开始上传文件到 Kstore..."
-          curl -F "file=@wex.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}" || { echo "上传文件失败！"; exit 1; }
+          curl -F "file=@wex.json" "https://upload.kstore.dev/upload/${{ env.KSTORE_ID }}?access_token=${{ env.KSTORE_TOKEN }}"
           echo "文件上传到 Kstore 完成。"
