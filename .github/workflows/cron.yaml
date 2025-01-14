@@ -65,8 +65,8 @@ jobs:
           ONLINE_JSON=$(curl -s https://9280.kstore.space/wex.json)
           PROCESSED_ONLINE_JSON=$(echo "$ONLINE_JSON" | jq -c --argjson filter_keys "$(echo "${FILTER_KEYS[@]}" | jq -R 'split(" ")')" "$JQ_PROCESS_COMMAND")
 
-          # 比较本地和在线 JSON 数据
-          if diff <(echo "$PROCESSED_ONLINE_JSON") <(cat wex.json) > /dev/null; then
+          # 使用 jq 直接比较 JSON 数据
+          if echo "$PROCESSED_ONLINE_JSON" | jq --sort-keys . | diff - <(jq --sort-keys . wex.json) > /dev/null; then
             echo "JSON 数据未修改，无需上传。"
             echo "changed=false" >> $GITHUB_OUTPUT
           else
