@@ -1,4 +1,4 @@
-name: Delete Old Workflow Runs
+name: Delete All Old Workflow Runs
 
 on:
   schedule:
@@ -30,9 +30,9 @@ jobs:
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
-      - name: Delete old Workflow runs
+      - name: Delete all old workflow runs
         run: |
-          HOURS_TO_KEEP=${{ github.event.inputs.hours_to_keep || 24 }}  # 默认保留 24 小时的 runs
+          HOURS_TO_KEEP=${{ github.event.inputs.hours_to_keep || 24 }}
           echo "开始删除 ${HOURS_TO_KEEP} 小时之前的 Workflow Runs"
           CUTOFF_DATE=$(date -u -d "${HOURS_TO_KEEP} hours ago" +%Y-%m-%dT%H:%M:%SZ)
           echo "Cutoff date: ${CUTOFF_DATE}"
