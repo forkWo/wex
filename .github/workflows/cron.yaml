@@ -11,26 +11,24 @@ on:
 env:
   JSON_URL: "https://9280.kstore.space/wex.json"
   UPLOAD_URL: "https://upload.kstore.space/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }}"
+  FINAL_JSON: "wex.json" # 最终文件命名为 wex.json
 
 jobs:
   process_json:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-
+      # 第一步：下载 JSON 文件并计算 MD5
       - name: 下载 JSON 数据并计算 MD5
         id: download_json
         run: |
-          # 下载 JSON 数据并计算 MD5
-          ORIGINAL_MD5=$(curl -s "${{ env.JSON_URL }}" | tee 9280.json | md5sum | awk '{print $1}')
+          ORIGINAL_MD5=$(curl -s "${{ env.JSON_URL }}" | tee original.json | md5sum | awk '{print $1}')
           echo "原始 JSON 文件的 MD5: $ORIGINAL_MD5"
           echo "ORIGINAL_MD5=$ORIGINAL_MD5" >> $GITHUB_ENV
-          echo "JSON 数据下载完成。"
 
-      - name: 处理 JSON 数据
-        id: process
+      # 第二步：修改 JSON 内容
+      - name: 修改 JSON 数据
+        id: modify_json
         run: |
           set -e
 
@@ -42,7 +40,6 @@ jobs:
             "Wexduanju001", "非凡", "木耳", "360", "爱坤"
           ]'
 
-          # 处理 JSON 数据
           if ! jq -c --argjson keys_to_delete "$KEYS_TO_DELETE" '
             del(.doh, .lives) |
             .sites |= (
@@ -59,28 +56,35 @@ jobs:
               ) |
               map(select(.key as $k | $keys_to_delete | index($k) == null))
             )
-          ' 9280.json > tmp.json; then
-            echo "处理 JSON 数据失败！" && exit 1
+          ' original.json > modified.json; then
+            echo "::error::处理 JSON 数据失败！"
+            exit 1
           fi
 
-          mv tmp.json wex.json
+      # 第三步：对比 MD5 并重命名文件
+      - name: 对比 MD5 并重命名文件
+        id: compare_md5
+        run: |
+          set -e
 
-          # 计算处理后 JSON 的 MD5
-          PROCESSED_MD5=$(md5sum wex.json | awk '{print $1}')
+          PROCESSED_MD5=$(md5sum modified.json | awk '{print $1}')
           echo "处理后 JSON 文件的 MD5: $PROCESSED_MD5"
 
-          # 比较 MD5 值
           if [[ "$ORIGINAL_MD5" != "$PROCESSED_MD5" ]]; then
-            echo "JSON 数据已修改，设置输出 changed 为 true。"
+            echo "JSON 数据已修改。"
             echo "changed=true" >> $GITHUB_OUTPUT
+            mv modified.json "${{ env.FINAL_JSON }}"
           else
             echo "JSON 数据未修改，无需上传。"
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
-          echo "JSON 数据处理完成。"
 
+      # 上传文件到 Kstore（仅在 changed 为 true 时执行）
       - name: 上传文件到 Kstore
-        if: steps.process.outputs.changed == 'true'
+        if: steps.compare_md5.outputs.changed == 'true'
         run: |
-          curl -F "file=@wex.json" "${{ env.UPLOAD_URL }}"
+          if ! curl -F "file=@${{ env.FINAL_JSON }}" "${{ env.UPLOAD_URL }}"; then
+            echo "::error::文件上传到 Kstore 失败！"
+            exit 1
+          fi
           echo "文件上传成功。"
