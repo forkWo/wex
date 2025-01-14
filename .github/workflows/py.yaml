@@ -5,8 +5,8 @@ on:
     branches:
       - wex
   workflow_dispatch:
-  #schedule:
-    #- cron: '0 */2 * * *' # 每两个小时触发一次
+  schedule:
+    - cron: '0 */2 * * *' # 每两个小时触发一次
 
 env:
   JSON_URL: "https://9280.kstore.space/wex.json"
