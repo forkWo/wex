@@ -1,4 +1,4 @@
-name: 更新 cs
+name: Wex JSON Upload (Node.js)
 
 on:
   push:
@@ -6,69 +6,99 @@ on:
       - 1
   workflow_dispatch:
   schedule:
-    #- cron: '*/55 * * * *'
+#   - cron: '0 */2 * * *' # 每两个小时触发一次
+
+env:
+  JSON_URL: "https://9280.kstore.space/wex.json"
+  FINAL_JSON: "wex.json" # 最终文件命名为 wex.json
 
 jobs:
-  update-spider:
+  process_json:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
-      - name: 检出代码库
-        uses: actions/checkout@v3
-
-      # Step 2: Setup Python
-      - name: 设置 Python
-        uses: actions/setup-python@v3
+      # 第一步：设置 Node.js 环境
+      - name: 设置 Node.js
+        uses: actions/setup-node@v3
         with:
-          python-version: '3.9'
+          node-version: "18" # 使用 Node.js 18
 
-      # Step 3: Cache dependencies
-      - name: Cache Python dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      # Step 4: Install necessary dependencies
-      - name: 安装依赖
+      # 第二步：下载 JSON 文件
+      - name: 下载 JSON 数据
+        id: download_json
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install requests jq
+          curl -s "${{ env.JSON_URL }}" -o 9280.json
+          ORIGINAL_MD5=$(md5sum 9280.json | awk '{print $1}')
+          echo "原始 JSON 文件的 MD5: $ORIGINAL_MD5"
+          echo "ORIGINAL_MD5=$ORIGINAL_MD5" >> $GITHUB_ENV
 
-          #  处理可能的依赖冲突,增加日志
-          python -m pip install --upgrade --force-reinstall requests jq > install_log.txt
-          cat install_log.txt
-
-      # Step 5: 获取、修改 Wex JSON 并上传
-      - name: 获取、修改 Wex JSON 并上传
+      # 第三步：运行 Node.js 脚本处理 JSON 数据
+      - name: 运行 Node.js 脚本处理 JSON
+        id: modify_json
         run: |
-          # 获取 JSON 数据
-          NEW_JSON=$(curl -s https://9280.kstore.space/wex.json 2>/dev/null)
+          node <<EOF
+          const fs = require('fs');
 
-          # 如果 NEW_JSON 为空，跳过后续操作, 并记录错误日志
-          if [[ -z "$NEW_JSON" ]]; then
-            echo "::error::Failed to fetch new JSON from kstore. Skipping update."
-            exit 1
+          // 输入和输出文件路径
+          const inputFile = '9280.json';
+          const outputFile = '${{ env.FINAL_JSON }}';
+
+          // 需要删除的键列表
+          const keysToDelete = [
+            "Doubana", "Wexconfig", "WexrenrenGuard", "mingriyingshi", "Fujutv", "SubaibaiGuard", "csp_Nmys",
+            "Wexliyuan", "Wextangdou", "Wexergeduoduo", "Wexbaobaobashi", "Wexbeiwa", "Wextuxiaobei", "Pandalivetv",
+            "Iktv", "WexDm84", "WexYsj", "自定义", "AList", "bili", "biliych", "Wexqingfengdj", "Wexxsmp3", "Wexpsmp3",
+            "Wexwwe", "看球", "926看球", "1直播", "Wexduanjuquark", "Wexduanjuvop", "Wexduanjuhema", "WexduanjuvmpGuard",
+            "Wexduanju001", "非凡", "木耳", "360", "爱坤"
+          ];
+
+          // 读取原始 JSON 文件
+          const data = JSON.parse(fs.readFileSync(inputFile, 'utf-8'));
+
+          // 删除不需要的键
+          delete data.doh;
+          delete data.lives;
+
+          // 修改特定键的名称
+          if (data.sites) {
+            data.sites = data.sites.map(site => {
+              if (site.key === "Douban") {
+                site.name = "🐮【推荐】🐮";
+              } else if (site.key === "Wexokconfig") {
+                site.name = "🐮配置中心🐮";
+              } else if (site.key === "Wexnullname") {
+                site.name = "💓观影┃4K💓";
+              }
+              return site;
+            });
+
+            // 过滤掉不需要的站点
+            data.sites = data.sites.filter(site => !keysToDelete.includes(site.key));
+          }
+
+          // 保存修改后的 JSON 文件
+          fs.writeFileSync(outputFile, JSON.stringify(data, null, 2), 'utf-8');
+
+          console.log('JSON 文件处理完成，保存为:', outputFile);
+          EOF
+
+      # 第四步：对比 MD5 并判断是否需要上传
+      - name: 对比 MD5 并判断是否需要上传
+        id: compare_md5
+        run: |
+          PROCESSED_MD5=$(md5sum "${{ env.FINAL_JSON }}" | awk '{print $1}')
+          echo "处理后 JSON 文件的 MD5: $PROCESSED_MD5"
+
+          if [[ "$ORIGINAL_MD5" != "$PROCESSED_MD5" ]]; then
+              echo "JSON 数据已修改。"
+              echo "changed=true" >> $GITHUB_OUTPUT
+          else
+              echo "JSON 数据未修改，无需上传。"
+              echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
-           # 使用 jq 修改 JSON 数据
-          UPDATED_JSON=$(echo "$NEW_JSON" | jq  '.sites |= map(
-            if .name == "公众号：王二小放牛娃" then .name = "推荐"
-            elif .name == "影视专用┃配置中心" then .name = "配置中心"
-            else .
-            end
-           ) | .lives = [] | .doh = [] | .sites =  del(.sites[] | select(.name == "⬇️【网盘类先扫码】⬇️"))')
-
-
-         # 输出KSTORE_TOKEN 的值，看看是否包含隐式空格
-          echo "KSTORE_TOKEN value: ${{ secrets.KSTORE_TOKEN }}"
-          
-          # 上传到 Kstore
-          curl -v -X POST \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.KSTORE_TOKEN }}" \
-            -d "$UPDATED_JSON" \
-            "https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}" 2>&1
+      # 第五步：上传文件到 Kstore（仅在 changed 为 true 时执行）
+      - name: 上传文件到 Kstore
+        if: steps.compare_md5.outputs.changed == 'true'
+        run: |
+          curl https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} -F "file=@${{ env.FINAL_JSON }}"
