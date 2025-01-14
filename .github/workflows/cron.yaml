@@ -1,4 +1,4 @@
-name:  Wex JSON 更新
+name:  Wex JSON Upload
 
 on:
   push:
@@ -18,11 +18,11 @@ jobs:
 
     steps:
       - name: 检出代码
+        uses: actions/checkout@v4
         run: |
           echo "开始检出代码..."
           echo "代码检出完成。"
-        uses: actions/checkout@v4
-
+          
       - name: 下载 JSON 数据
         run: |
           echo "开始下载 JSON 数据..."
