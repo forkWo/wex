@@ -38,6 +38,7 @@ jobs:
         run: |
           python3 <<EOF
           import json
+          import hashlib
 
           # 读取原始 JSON 文件
           with open("9280.json", "r", encoding="utf-8") as f:
@@ -45,34 +46,40 @@ jobs:
 
           # 提取 spider 字段内容
           spider_content = json.dumps(data.get("spider", {}), ensure_ascii=False, indent=2)
+          spider_md5 = hashlib.md5(spider_content.encode("utf-8")).hexdigest()
 
           # 保存 spider 字段内容
           with open("spider_content.txt", "w", encoding="utf-8") as f:
               f.write(spider_content)
+
+          # 保存 spider 字段的 MD5 到文件
+          with open("spider_md5.txt", "w") as f:
+              f.write(spider_md5)
           EOF
 
       # 第四步：对比 spider 字段的 MD5
       - name: 对比 spider 字段的 MD5
         id: compare_spider_md5
         run: |
-          # 获取上一次发布的 spider 字段 MD5
+          # 获取上一次发布的 spider_md5.txt 文件
           response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/${{ github.repository }}/releases/latest")
           if [[ -z "$response" ]]; then
               echo "错误：GitHub API 请求失败。"
               exit 1
           fi
-          LATEST_RELEASE_SPIDER_MD5=$(echo "$response" | jq -r '.body' | grep -oP '(?<=Spider MD5: )\w+')
-
-          if [[ -z "$LATEST_RELEASE_SPIDER_MD5" ]]; then
-              echo "未找到上一次发布的 spider 字段 MD5。"
+          LATEST_RELEASE_SPIDER_MD5_URL=$(echo "$response" | jq -r '.assets[] | select(.name == "spider_md5.txt") | .browser_download_url')
+          if [[ -z "$LATEST_RELEASE_SPIDER_MD5_URL" ]]; then
+              echo "未找到上一次发布的 spider_md5.txt 文件。"
               LATEST_RELEASE_SPIDER_MD5=""
           else
+              curl -s -L -o latest_spider_md5.txt "$LATEST_RELEASE_SPIDER_MD5_URL"
+              LATEST_RELEASE_SPIDER_MD5=$(cat latest_spider_md5.txt)
               echo "上一次发布的 spider 字段 MD5: $LATEST_RELEASE_SPIDER_MD5"
           fi
 
           # 获取当前 spider 字段的 MD5
-          CURRENT_SPIDER_MD5=$(python3 -c "import hashlib; print(hashlib.md5(open('spider_content.txt', 'rb').read()).hexdigest())")
+          CURRENT_SPIDER_MD5=$(cat spider_md5.txt)
           echo "当前 spider 字段的 MD5: $CURRENT_SPIDER_MD5"
 
           # 对比 MD5
@@ -179,6 +186,17 @@ jobs:
             ```
             $(cat spider_content.txt)
             ```
-            Spider MD5: $(python3 -c "import hashlib; print(hashlib.md5(open('spider_content.txt', 'rb').read()).hexdigest())")
           draft: false
           prerelease: false
+
+      # 第九步：上传 spider_md5.txt 到 Releases
+      - name: 上传 spider_md5.txt 到 Releases
+        if: steps.compare_crc32.outputs.json_changed == 'true'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: spider_md5.txt
+          asset_name: spider_md5.txt
+          asset_content_type: text/plain
