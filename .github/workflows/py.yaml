@@ -23,7 +23,11 @@ jobs:
         with:
           python-version: "3.x"
 
-      # 第二步：下载 JSON 文件
+      # 第二步：安装 jq 工具
+      - name: 安装 jq
+        run: sudo apt-get install -y jq
+
+      # 第三步：下载 JSON 文件
       - name: 下载 JSON 数据
         id: download_json
         run: |
@@ -32,16 +36,19 @@ jobs:
           echo "原始 JSON 文件的 MD5: $ORIGINAL_MD5"
           echo "ORIGINAL_MD5=$ORIGINAL_MD5" >> $GITHUB_ENV
 
-      # 第三步：获取上一个 Releases 版本的 spider MD5
+      # 第四步：获取上一个 Releases 版本的 spider MD5
       - name: 获取上一个 Releases 版本的 spider MD5
         id: get_previous_spider_md5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub Token
         run: |
-          LATEST_RELEASE=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest)
+          LATEST_RELEASE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/${{ github.repository }}/releases/latest)
+          echo "GitHub API 响应: $LATEST_RELEASE"  # 调试输出
           PREVIOUS_SPIDER_MD5=$(echo "$LATEST_RELEASE" | jq -r '.body' | grep -oP 'Spider MD5: \K[0-9a-f]{32}')
           echo "上一个 Releases 版本的 Spider MD5: $PREVIOUS_SPIDER_MD5"
           echo "PREVIOUS_SPIDER_MD5=$PREVIOUS_SPIDER_MD5" >> $GITHUB_ENV
 
-      # 第四步：运行 Python 脚本处理 JSON 数据
+      # 第五步：运行 Python 脚本处理 JSON 数据
       - name: 运行 Python 脚本处理 JSON
         id: modify_json
         run: |
@@ -91,7 +98,7 @@ jobs:
           print("JSON 文件处理完成，保存为:", output_file)
           EOF
 
-      # 第五步：对比 MD5 并判断是否需要上传
+      # 第六步：对比 MD5 并判断是否需要上传
       - name: 对比 MD5 并判断是否需要上传
         id: compare_md5
         run: |
@@ -106,7 +113,7 @@ jobs:
               echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
-      # 第六步：对比 spider 字段
+      # 第七步：对比 spider 字段
       - name: 对比 spider 字段
         id: compare_spider
         run: |
@@ -121,13 +128,13 @@ jobs:
               echo "spider_changed=false" >> $GITHUB_OUTPUT
           fi
 
-      # 第七步：上传文件到 Kstore（仅在 changed 为 true 时执行）
+      # 第八步：上传文件到 Kstore（仅在 changed 为 true 时执行）
       - name: 上传文件到 Kstore
         if: steps.compare_md5.outputs.changed == 'true'
         run: |
           curl https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} -F "file=@${{ env.FINAL_JSON }}"
 
-      # 第八步：发布新的 Releases（仅在 spider_changed 为 true 时执行）
+      # 第九步：发布新的 Releases（仅在 spider_changed 为 true 时执行）
       - name: 发布新的 Releases
         if: steps.compare_spider.outputs.spider_changed == 'true'
         run: |
