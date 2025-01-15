@@ -55,8 +55,8 @@ jobs:
             echo "body 内容: $BODY"  # 调试输出
 
             # 提取 MD5 值
-            PREVIOUS_SPIDER_MD5=$(echo "$BODY" | grep -oP 'md5;\K[0-9a-f]{32}')
-            echo "上一个 Releases 版本的 Spider MD5: $PREVIOUS_SPIDER_MD5"
+            PREVIOUS_SPIDER_MD5=$(echo "$BODY" | grep -oP 'Spider MD5: \K[0-9a-f]{32}')
+            echo "提取的 MD5 值: $PREVIOUS_SPIDER_MD5"  # 调试输出
 
             # 将 MD5 值写入环境变量
             echo "PREVIOUS_SPIDER_MD5=$PREVIOUS_SPIDER_MD5" >> $GITHUB_ENV
