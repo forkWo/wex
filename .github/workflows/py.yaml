@@ -6,7 +6,7 @@ on:
       - wex
   workflow_dispatch:
   schedule:
-    - cron: '0 */2 * * *' # 每两个小时触发一次
+    - cron: '0 */3 * * *' # 每两个小时触发一次
 
 env:
   JSON_URL: "https://9280.kstore.space/wex.json"
@@ -28,78 +28,17 @@ jobs:
         id: download_json
         run: |
           curl -s "${{ env.JSON_URL }}" -o 9280.json
-          ORIGINAL_CRC32=$(python3 -c "import zlib; print(zlib.crc32(open('9280.json', 'rb').read()) & 0xffffffff)")
-          echo "原始 JSON 文件的 CRC32: $ORIGINAL_CRC32"
-          echo "ORIGINAL_CRC32=$ORIGINAL_CRC32" >> $GITHUB_ENV
+          ORIGINAL_MD5=$(md5sum 9280.json | awk '{print $1}')
+          echo "原始 JSON 文件的 MD5: $ORIGINAL_MD5"
+          echo "ORIGINAL_MD5=$ORIGINAL_MD5" >> $GITHUB_ENV
 
-      # 第三步：提取 spider 字段并保存内容
-      - name: 提取 spider 字段并保存内容
-        id: extract_spider
-        run: |
-          python3 <<EOF
-          import json
-          import hashlib
-
-          # 读取原始 JSON 文件
-          with open("9280.json", "r", encoding="utf-8") as f:
-              data = json.load(f)
-
-          # 提取 spider 字段内容
-          spider_content = json.dumps(data.get("spider", {}), ensure_ascii=False, indent=2)
-          spider_md5 = hashlib.md5(spider_content.encode("utf-8")).hexdigest()
-
-          # 保存 spider 字段内容
-          with open("spider_content.txt", "w", encoding="utf-8") as f:
-              f.write(spider_content)
-
-          # 保存 spider 字段的 MD5 到文件
-          with open("spider_md5.txt", "w") as f:
-              f.write(spider_md5)
-          EOF
-
-      # 第四步：对比 spider 字段的 MD5
-      - name: 对比 spider 字段的 MD5
-        id: compare_spider_md5
-        run: |
-          # 获取上一次发布的 spider_md5.txt 文件
-          response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/latest")
-          if [[ -z "$response" ]]; then
-              echo "错误：GitHub API 请求失败。"
-              exit 1
-          fi
-          LATEST_RELEASE_SPIDER_MD5_URL=$(echo "$response" | jq -r '.assets[] | select(.name == "spider_md5.txt") | .browser_download_url')
-          if [[ -z "$LATEST_RELEASE_SPIDER_MD5_URL" ]]; then
-              echo "未找到上一次发布的 spider_md5.txt 文件。"
-              LATEST_RELEASE_SPIDER_MD5=""
-          else
-              curl -s -L -o latest_spider_md5.txt "$LATEST_RELEASE_SPIDER_MD5_URL"
-              LATEST_RELEASE_SPIDER_MD5=$(cat latest_spider_md5.txt)
-              echo "上一次发布的 spider 字段 MD5: $LATEST_RELEASE_SPIDER_MD5"
-          fi
-
-          # 获取当前 spider 字段的 MD5
-          CURRENT_SPIDER_MD5=$(cat spider_md5.txt)
-          echo "当前 spider 字段的 MD5: $CURRENT_SPIDER_MD5"
-
-          # 对比 MD5
-          if [[ "$CURRENT_SPIDER_MD5" == "$LATEST_RELEASE_SPIDER_MD5" ]]; then
-              echo "spider 字段未修改，结束脚本。"
-              echo "spider_changed=false" >> $GITHUB_OUTPUT
-              exit 0
-          else
-              echo "spider 字段已修改。"
-              echo "spider_changed=true" >> $GITHUB_OUTPUT
-          fi
-
-      # 第五步：运行 Python 脚本处理 JSON 数据
+      # 第三步：运行 Python 脚本处理 JSON 数据
       - name: 运行 Python 脚本处理 JSON
-        if: steps.compare_spider_md5.outputs.spider_changed == 'true'
         id: modify_json
         run: |
           python3 <<EOF
           import json
-          import zlib
+          import hashlib
 
           # 输入和输出文件路径
           input_file = "9280.json"
@@ -141,62 +80,25 @@ jobs:
               json.dump(data, f, ensure_ascii=False, indent=2)
 
           print("JSON 文件处理完成，保存为:", output_file)
-
-          # 计算处理后文件的 CRC32
-          with open(output_file, "rb") as f:
-              processed_crc32 = zlib.crc32(f.read()) & 0xffffffff
-          with open("processed_crc32.txt", "w") as f:
-              f.write(str(processed_crc32))
           EOF
 
-      # 第六步：对比 CRC32
-      - name: 对比 CRC32
-        if: steps.compare_spider_md5.outputs.spider_changed == 'true'
-        id: compare_crc32
+      # 第四步：对比 MD5 并判断是否需要上传
+      - name: 对比 MD5 并判断是否需要上传
+        id: compare_md5
         run: |
-          PROCESSED_CRC32=$(cat processed_crc32.txt)
-          echo "处理后 JSON 文件的 CRC32: $PROCESSED_CRC32"
+          PROCESSED_MD5=$(md5sum "${{ env.FINAL_JSON }}" | awk '{print $1}')
+          echo "处理后 JSON 文件的 MD5: $PROCESSED_MD5"
 
-          if [[ "$PROCESSED_CRC32" != "$ORIGINAL_CRC32" ]]; then
-              echo "JSON 文件已修改。"
-              echo "json_changed=true" >> $GITHUB_OUTPUT
+          if [[ "$ORIGINAL_MD5" != "$PROCESSED_MD5" ]]; then
+              echo "JSON 数据已修改。"
+              echo "changed=true" >> $GITHUB_OUTPUT
           else
-              echo "JSON 文件未修改，无需上传和发布。"
-              echo "json_changed=false" >> $GITHUB_OUTPUT
+              echo "JSON 数据未修改，无需上传。"
+              echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
-      # 第七步：上传文件到 Kstore（仅在 json_changed 为 true 时执行）
+      # 第五步：上传文件到 Kstore（仅在 changed 为 true 时执行）
       - name: 上传文件到 Kstore
-        if: steps.compare_crc32.outputs.json_changed == 'true'
+        if: steps.compare_md5.outputs.changed == 'true'
         run: |
           curl https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} -F "file=@${{ env.FINAL_JSON }}"
-
-      # 第八步：发布 Releases（仅在 json_changed 为 true 时执行）
-      - name: 发布 Releases
-        if: steps.compare_crc32.outputs.json_changed == 'true'
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: release-$(date +"%Y%m%d-%H%M%S")
-          release_name: Release $(date +"%Y%m%d-%H%M%S")
-          body: |
-            Spider 字段内容已更新，内容如下：
-            ```
-            $(cat spider_content.txt)
-            ```
-          draft: false
-          prerelease: false
-
-      # 第九步：上传 spider_md5.txt 到 Releases
-      - name: 上传 spider_md5.txt 到 Releases
-        if: steps.compare_crc32.outputs.json_changed == 'true'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: spider_md5.txt
-          asset_name: spider_md5.txt
-          asset_content_type: text/plain
