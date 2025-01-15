@@ -10,7 +10,7 @@ on:
         required: true
         type: string
 
-  # 在 runs 分支上触发
+  # 在特定分支（例如 runs 分支）上触发
   push:
     branches:
       - runs
@@ -25,10 +25,10 @@ jobs:
 
       - name: Delete workflow run
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RUN_ID: ${{ github.event.inputs.run_id }}
+          PAT: ${{ secrets.PAT }}  # 使用 GitHub Secrets 中的 PAT
+          RUN_ID: ${{ github.event.inputs.run_id }}  # 从手动触发输入中获取 run_id
         run: |
           curl -X DELETE \
             -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Authorization: Bearer $PAT" \
             https://api.github.com/repos/${{ github.repository }}/actions/runs/$RUN_ID
