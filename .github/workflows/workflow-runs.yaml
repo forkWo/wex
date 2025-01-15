@@ -1,54 +1,27 @@
-name: Delete All Runs Manually
+name: Delete Workflow Run
 
 on:
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'The ID of the workflow run to delete'
+        required: true
+        type: string
 
 jobs:
-  delete-all-runs:
+  delete-run:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.8'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests
-
-      - name: Delete all runs
+      - name: Delete workflow run
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub Token 进行认证
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.inputs.run_id }}
         run: |
-          import os
-          import requests
-
-          # GitHub API URL to list workflow runs
-          repo = os.getenv('GITHUB_REPOSITORY')
-          url = f'https://api.github.com/repos/{repo}/actions/runs'
-
-          headers = {
-              'Authorization': f'token {os.getenv("GITHUB_TOKEN")}',
-              'Accept': 'application/vnd.github.v3+json'
-          }
-
-          # Fetch the list of all runs
-          response = requests.get(url, headers=headers)
-          runs = response.json().get('workflow_runs', [])
-
-          # Delete all runs
-          for run in runs:
-              run_id = run['id']
-              delete_url = f'https://api.github.com/repos/{repo}/actions/runs/{run_id}'
-              delete_response = requests.delete(delete_url, headers=headers)
-              if delete_response.status_code == 204:
-                  print(f'Deleted run {run_id}')
-              else:
-                  print(f'Failed to delete run {run_id}: {delete_response.status_code}')
-
-          print('All runs deleted successfully.')
+          curl -X DELETE \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            https://api.github.com/repos/${{ github.repository }}/actions/runs/$RUN_ID
