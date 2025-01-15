@@ -1,24 +1,22 @@
-name: Delete Workflow Run
+name: Run Runs Branch Workflow
 
 # 触发器配置
 on:
-  # 允许手动触发工作流
-  workflow_dispatch:
-    inputs:
-      run_id:
-        description: 'The ID of the workflow run to delete'
-        required: true
-        type: string
+  workflow_dispatch:  # 允许手动触发
 
 jobs:
-  delete-run:
+  run-runs-workflow:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      # 切换到 runs 分支
+      - name: Checkout runs branch
         uses: actions/checkout@v3
+        with:
+          ref: runs  # 指定 runs 分支
 
-      - name: Delete workflow run
+      # 运行 runs 分支中的 YAML 脚本
+      - name: Run runs branch workflow
         env:
           PAT: ${{ secrets.PAT }}  # 使用 GitHub Secrets 中的 PAT
           RUN_ID: ${{ github.event.inputs.run_id }}  # 从手动触发输入中获取 run_id
