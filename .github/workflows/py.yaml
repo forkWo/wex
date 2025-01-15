@@ -52,10 +52,15 @@ jobs:
           with open("spider_content.txt", "w", encoding="utf-8") as f:
               f.write(spider_content)
 
-          # 输出当前 spider 字段的 MD5
-          echo "当前 spider 字段的 MD5: $spider_md5"
-          echo "CURRENT_SPIDER_MD5=$spider_md5" >> $GITHUB_ENV
+          # 保存 spider 字段的 MD5 到文件
+          with open("spider_md5.txt", "w") as f:
+              f.write(spider_md5)
           EOF
+
+          # 读取 spider_md5.txt 并设置环境变量
+          CURRENT_SPIDER_MD5=$(cat spider_md5.txt)
+          echo "当前 spider 字段的 MD5: $CURRENT_SPIDER_MD5"
+          echo "CURRENT_SPIDER_MD5=$CURRENT_SPIDER_MD5" >> $GITHUB_ENV
 
       # 第四步：对比 spider 字段的 MD5
       - name: 对比 spider 字段的 MD5
