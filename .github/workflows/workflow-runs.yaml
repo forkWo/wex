@@ -1,12 +1,19 @@
 name: Delete Workflow Run
 
+# 触发器配置
 on:
+  # 允许手动触发工作流
   workflow_dispatch:
     inputs:
       run_id:
         description: 'The ID of the workflow run to delete'
         required: true
         type: string
+
+  # 在 runs 分支上触发
+  push:
+    branches:
+      - runs
 
 jobs:
   delete-run:
