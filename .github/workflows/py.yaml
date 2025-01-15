@@ -48,11 +48,13 @@ jobs:
           spider_content = json.dumps(data.get("spider", {}), ensure_ascii=False, indent=2)
           spider_md5 = hashlib.md5(spider_content.encode("utf-8")).hexdigest()
 
-          # 保存 spider 字段内容和 MD5
+          # 保存 spider 字段内容
           with open("spider_content.txt", "w", encoding="utf-8") as f:
               f.write(spider_content)
-          with open("spider_md5.txt", "w") as f:
-              f.write(spider_md5)
+
+          # 输出当前 spider 字段的 MD5
+          echo "当前 spider 字段的 MD5: $spider_md5"
+          echo "CURRENT_SPIDER_MD5=$spider_md5" >> $GITHUB_ENV
           EOF
 
       # 第四步：对比 spider 字段的 MD5
@@ -76,13 +78,8 @@ jobs:
           fi
 
           # 获取当前 spider 字段的 MD5
-          if [[ -f "spider_md5.txt" ]]; then
-              CURRENT_SPIDER_MD5=$(cat spider_md5.txt)
-              echo "当前 spider 字段的 MD5: $CURRENT_SPIDER_MD5"
-          else
-              echo "错误：spider_md5.txt 文件未找到。"
-              exit 1
-          fi
+          CURRENT_SPIDER_MD5="${{ env.CURRENT_SPIDER_MD5 }}"
+          echo "当前 spider 字段的 MD5: $CURRENT_SPIDER_MD5"
 
           # 对比 MD5
           if [[ "$CURRENT_SPIDER_MD5" == "$LATEST_RELEASE_SPIDER_MD5" ]]; then
@@ -188,6 +185,6 @@ jobs:
             ```
             $(cat spider_content.txt)
             ```
-            Spider MD5: $(cat spider_md5.txt)
+            Spider MD5: ${{ env.CURRENT_SPIDER_MD5 }}
           draft: false
           prerelease: false
