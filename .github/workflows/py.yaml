@@ -6,7 +6,7 @@ on:
       - wex
   workflow_dispatch:
   schedule:
-    - cron: '0 */1 * * *' # 每两个小时触发一次
+    - cron: '0 */3 * * *' # 每两个小时触发一次
 
 env:
   JSON_URL: "https://9280.kstore.space/wex.json"
@@ -40,9 +40,9 @@ jobs:
       - name: 获取上一个 Releases 版本的 spider MD5
         id: get_previous_spider_md5
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub Token
+          GITHUB_TOKEN: ${{ secrets.PAT }}  # 使用 PAT
         run: |
-          LATEST_RELEASE=$(curl -s -H "Authorization: Bearer $PAT" https://api.github.com/repos/${{ github.repository }}/releases/latest)
+          LATEST_RELEASE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/${{ github.repository }}/releases/latest)
           echo "GitHub API 响应: $LATEST_RELEASE"  # 调试输出
 
           # 提取 body 内容
@@ -145,6 +145,8 @@ jobs:
       # 第九步：发布新的 Releases（仅在 spider_changed 为 true 时执行）
       - name: 发布新的 Releases
         if: steps.compare_spider.outputs.spider_changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}  # 使用 PAT
         run: |
           CURRENT_SPIDER_MD5=$(md5sum <<< $(jq -r '.spider' 9280.json) | awk '{print $1}')
           gh release create v$(date +%Y%m%d%H%M%S) --title "New Release $(date +%Y-%m-%d)" --notes "Spider MD5: $CURRENT_SPIDER_MD5"
