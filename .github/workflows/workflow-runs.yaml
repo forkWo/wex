@@ -10,11 +10,6 @@ on:
         required: true
         type: string
 
-  # 在特定分支（例如 runs 分支）上触发
-  push:
-    branches:
-      - runs
-
 jobs:
   delete-run:
     runs-on: ubuntu-latest
