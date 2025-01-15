@@ -50,7 +50,7 @@ jobs:
               "Wexliyuan", "Wextangdou", "Wexergeduoduo", "Wexbaobaobashi", "Wexbeiwa", "Wextuxiaobei", "Pandalivetv",
               "Iktv", "WexDm84", "WexYsj", "自定义", "AList", "bili", "biliych", "Wexqingfengdj", "Wexxsmp3", "Wexpsmp3",
               "Wexwwe", "看球", "926看球", "1直播", "Wexduanjuquark", "Wexduanjuvop", "Wexduanjuhema", "WexduanjuvmpGuard",
-              "Wexduanju001", "非凡", "木耳", "360", "爱坤"
+              "Wexduanju001", "非凡", "木耳", "360", "爱坤", "Wexyingchao"
           ]
 
           # 读取原始 JSON 文件
@@ -131,7 +131,16 @@ jobs:
         run: |
           curl https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} -F "file=@${{ env.FINAL_JSON }}"
 
-      # 第七步：发布 Releases（仅在 spider_changed 为 true 时执行）
+      # 第七步：获取当前时间并设置 tag_name 和 release_name
+      - name: 获取当前时间
+        if: steps.compare_spider_md5.outputs.spider_changed == 'true'
+        id: get_current_time
+        run: |
+          CURRENT_TIME=$(date +"%Y%m%d-%H%M%S")
+          echo "当前时间: $CURRENT_TIME"
+          echo "CURRENT_TIME=$CURRENT_TIME" >> $GITHUB_ENV
+
+      # 第八步：发布 Releases（仅在 spider_changed 为 true 时执行）
       - name: 发布 Releases
         if: steps.compare_spider_md5.outputs.spider_changed == 'true'
         id: create_release
@@ -139,8 +148,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v1.0.0
-          release_name: Release v1.0.0
+          tag_name: release-${{ env.CURRENT_TIME }}
+          release_name: Release ${{ env.CURRENT_TIME }}
           body: |
             Spider 字段内容已更新，内容如下：
             ```
