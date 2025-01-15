@@ -6,7 +6,7 @@ on:
       - wex
   workflow_dispatch:
   schedule:
-    - cron: '0 */2 * * *' # 每两个小时触发一次
+    - cron: '0 */1 * * *' # 每两个小时触发一次
 
 env:
   JSON_URL: "https://9280.kstore.space/wex.json"
@@ -28,17 +28,71 @@ jobs:
         id: download_json
         run: |
           curl -s "${{ env.JSON_URL }}" -o 9280.json
-          ORIGINAL_MD5=$(md5sum 9280.json | awk '{print $1}')
-          echo "原始 JSON 文件的 MD5: $ORIGINAL_MD5"
-          echo "ORIGINAL_MD5=$ORIGINAL_MD5" >> $GITHUB_ENV
+          ORIGINAL_CRC32=$(python3 -c "import zlib; print(zlib.crc32(open('9280.json', 'rb').read()) & 0xffffffff)")
+          echo "原始 JSON 文件的 CRC32: $ORIGINAL_CRC32"
+          echo "ORIGINAL_CRC32=$ORIGINAL_CRC32" >> $GITHUB_ENV
 
-      # 第三步：运行 Python 脚本处理 JSON 数据
-      - name: 运行 Python 脚本处理 JSON
-        id: modify_json
+      # 第三步：提取 spider 字段并计算 MD5
+      - name: 提取 spider 字段并计算 MD5
+        id: extract_spider
         run: |
           python3 <<EOF
           import json
           import hashlib
+
+          # 读取原始 JSON 文件
+          with open("9280.json", "r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          # 提取 spider 字段内容
+          spider_content = json.dumps(data.get("spider", {}), ensure_ascii=False, indent=2)
+          spider_md5 = hashlib.md5(spider_content.encode("utf-8")).hexdigest()
+
+          # 保存 spider 字段内容和 MD5
+          with open("spider_content.txt", "w", encoding="utf-8") as f:
+              f.write(spider_content)
+          with open("spider_md5.txt", "w") as f:
+              f.write(spider_md5)
+          EOF
+
+      # 第四步：对比 spider 字段的 MD5
+      - name: 对比 spider 字段的 MD5
+        id: compare_spider_md5
+        run: |
+          # 获取上一次发布的 spider 字段 MD5
+          LATEST_RELEASE_SPIDER_MD5=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/latest" | \
+            jq -r '.body' | grep -oP '(?<=Spider MD5: )\w+')
+
+          if [[ -z "$LATEST_RELEASE_SPIDER_MD5" ]]; then
+              echo "未找到上一次发布的 spider 字段 MD5。"
+              LATEST_RELEASE_SPIDER_MD5=""
+          else
+              echo "上一次发布的 spider 字段 MD5: $LATEST_RELEASE_SPIDER_MD5"
+          fi
+
+          # 获取当前 spider 字段的 MD5
+          CURRENT_SPIDER_MD5=$(cat spider_md5.txt)
+          echo "当前 spider 字段的 MD5: $CURRENT_SPIDER_MD5"
+
+          # 对比 MD5
+          if [[ "$CURRENT_SPIDER_MD5" == "$LATEST_RELEASE_SPIDER_MD5" ]]; then
+              echo "spider 字段未修改，结束脚本。"
+              echo "spider_changed=false" >> $GITHUB_OUTPUT
+              exit 0
+          else
+              echo "spider 字段已修改。"
+              echo "spider_changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      # 第五步：运行 Python 脚本处理 JSON 数据
+      - name: 运行 Python 脚本处理 JSON
+        if: steps.compare_spider_md5.outputs.spider_changed == 'true'
+        id: modify_json
+        run: |
+          python3 <<EOF
+          import json
+          import zlib
 
           # 输入和输出文件路径
           input_file = "9280.json"
@@ -81,79 +135,50 @@ jobs:
 
           print("JSON 文件处理完成，保存为:", output_file)
 
-          # 提取 spider 字段内容并计算 MD5
-          spider_content = json.dumps(data.get("spider", {}), ensure_ascii=False, indent=2)
-          spider_md5 = hashlib.md5(spider_content.encode("utf-8")).hexdigest()
-          with open("spider_content.txt", "w", encoding="utf-8") as f:
-              f.write(spider_content)
-          with open("spider_md5.txt", "w", encoding="utf-8") as f:
-              f.write(spider_md5)
+          # 计算处理后文件的 CRC32
+          with open(output_file, "rb") as f:
+              processed_crc32 = zlib.crc32(f.read()) & 0xffffffff
+          with open("processed_crc32.txt", "w") as f:
+              f.write(str(processed_crc32))
           EOF
 
-      # 第四步：读取 spider 字段的 MD5 和内容
-      - name: 读取 spider 字段的 MD5 和内容
-        id: read_spider
-        run: |
-          SPIDER_MD5=$(cat spider_md5.txt)
-          SPIDER_CONTENT=$(cat spider_content.txt)
-          echo "当前 spider 字段的 MD5: $SPIDER_MD5"
-          echo "SPIDER_MD5=$SPIDER_MD5" >> $GITHUB_ENV
-          echo "SPIDER_CONTENT<<EOF" >> $GITHUB_ENV
-          echo "$SPIDER_CONTENT" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      # 第五步：对比 spider 字段的 MD5
-      - name: 对比 spider 字段的 MD5
-        id: compare_spider_md5
-        run: |
-          # 获取上一次的 spider 字段 MD5（假设保存在环境变量中）
-          if [[ -f "last_spider_md5.txt" ]]; then
-              LAST_SPIDER_MD5=$(cat last_spider_md5.txt)
-              echo "上一次 spider 字段的 MD5: $LAST_SPIDER_MD5"
-          else
-              LAST_SPIDER_MD5=""
-              echo "未找到上一次的 spider 字段 MD5。"
-          fi
-
-          # 对比 MD5
-          if [[ "$SPIDER_MD5" != "$LAST_SPIDER_MD5" ]]; then
-              echo "spider 字段已修改。"
-              echo "spider_changed=true" >> $GITHUB_OUTPUT
-              echo "$SPIDER_MD5" > last_spider_md5.txt
-          else
-              echo "spider 字段未修改，无需上传和发布。"
-              echo "spider_changed=false" >> $GITHUB_OUTPUT
-          fi
-
-      # 第六步：上传文件到 Kstore（仅在 spider_changed 为 true 时执行）
-      - name: 上传文件到 Kstore
+      # 第六步：对比 CRC32
+      - name: 对比 CRC32
         if: steps.compare_spider_md5.outputs.spider_changed == 'true'
+        id: compare_crc32
+        run: |
+          PROCESSED_CRC32=$(cat processed_crc32.txt)
+          echo "处理后 JSON 文件的 CRC32: $PROCESSED_CRC32"
+
+          if [[ "$PROCESSED_CRC32" != "$ORIGINAL_CRC32" ]]; then
+              echo "JSON 文件已修改。"
+              echo "json_changed=true" >> $GITHUB_OUTPUT
+          else
+              echo "JSON 文件未修改，无需上传和发布。"
+              echo "json_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      # 第七步：上传文件到 Kstore（仅在 json_changed 为 true 时执行）
+      - name: 上传文件到 Kstore
+        if: steps.compare_crc32.outputs.json_changed == 'true'
         run: |
           curl https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} -F "file=@${{ env.FINAL_JSON }}"
 
-      # 第七步：获取当前时间并设置 tag_name 和 release_name
-      - name: 获取当前时间
-        if: steps.compare_spider_md5.outputs.spider_changed == 'true'
-        id: get_current_time
-        run: |
-          CURRENT_TIME=$(date +"%Y%m%d-%H%M%S")
-          echo "当前时间: $CURRENT_TIME"
-          echo "CURRENT_TIME=$CURRENT_TIME" >> $GITHUB_ENV
-
-      # 第八步：发布 Releases（仅在 spider_changed 为 true 时执行）
+      # 第八步：发布 Releases（仅在 json_changed 为 true 时执行）
       - name: 发布 Releases
-        if: steps.compare_spider_md5.outputs.spider_changed == 'true'
+        if: steps.compare_crc32.outputs.json_changed == 'true'
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: release-${{ env.CURRENT_TIME }}
-          release_name: Release ${{ env.CURRENT_TIME }}
+          tag_name: release-$(date +"%Y%m%d-%H%M%S")
+          release_name: Release $(date +"%Y%m%d-%H%M%S")
           body: |
             Spider 字段内容已更新，内容如下：
             ```
-            ${{ env.SPIDER_CONTENT }}
+            $(cat spider_content.txt)
             ```
+            Spider MD5: $(cat spider_md5.txt)
           draft: false
           prerelease: false
