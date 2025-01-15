@@ -72,8 +72,8 @@ jobs:
           if [[ "$CURRENT_SPIDER_MD5" != "$PREVIOUS_SPIDER_MD5" ]]; then
             echo "Spider 字段已修改，正在处理 JSON 文件..."
 
-            # 直接运行 Python 脚本
-            python3 -c "
+            # 使用 <<EOF 语法运行 Python 脚本
+            python3 <<EOF
             import json
             import hashlib
 
@@ -117,7 +117,7 @@ jobs:
                 json.dump(data, f, ensure_ascii=False, indent=2)
 
             print('JSON 文件处理完成，保存为:', output_file)
-            "
+            EOF
 
             # 标记 JSON 文件已修改
             echo "changed=true" >> $GITHUB_OUTPUT
