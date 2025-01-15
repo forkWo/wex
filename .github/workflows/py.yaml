@@ -62,95 +62,79 @@ jobs:
             echo "PREVIOUS_SPIDER_MD5=$PREVIOUS_SPIDER_MD5" >> $GITHUB_ENV
           fi
 
-      # 第五步：运行 Python 脚本处理 JSON 数据
-      - name: 运行 Python 脚本处理 JSON
+      # 第五步：对比 spider 字段并修改 JSON 文件
+      - name: 对比 spider 字段并修改 JSON 文件
         id: modify_json
-        run: |
-          python3 <<EOF
-          import json
-          import hashlib
-
-          # 输入和输出文件路径
-          input_file = "9280.json"
-          output_file = "${{ env.FINAL_JSON }}"
-
-          # 需要删除的键列表
-          keys_to_delete = [
-              "Doubana", "Wexconfig", "WexrenrenGuard", "mingriyingshi", "Fujutv", "SubaibaiGuard", "csp_Nmys",
-              "Wexliyuan", "Wextangdou", "Wexergeduoduo", "Wexbaobaobashi", "Wexbeiwa", "Wextuxiaobei", "Pandalivetv",
-              "Iktv", "WexDm84", "WexYsj", "自定义", "AList", "bili", "biliych", "Wexqingfengdj", "Wexxsmp3", "Wexpsmp3",
-              "Wexwwe", "看球", "926看球", "1直播", "Wexduanjuquark", "Wexduanjuvop", "Wexduanjuhema", "WexduanjuvmpGuard",
-              "Wexduanju001", "非凡", "木耳", "360", "爱坤", "Wexyingchao"
-          ]
-
-          # 读取原始 JSON 文件
-          with open(input_file, "r", encoding="utf-8") as f:
-              data = json.load(f)
-
-          # 删除不需要的键
-          if "doh" in data:
-              del data["doh"]
-          if "lives" in data:
-              del data["lives"]
-
-          # 修改特定键的名称
-          for site in data.get("sites", []):
-              if site.get("key") == "Douban":
-                  site["name"] = "🐮【推荐】🐮"
-              elif site.get("key") == "Wexokconfig":
-                  site["name"] = "🐮配置中心🐮"
-              elif site.get("key") == "Wexnullname":
-                  site["name"] = "💓观影┃4K💓"
-
-          # 过滤掉不需要的站点
-          data["sites"] = [site for site in data.get("sites", []) if site.get("key") not in keys_to_delete]
-
-          # 保存修改后的 JSON 文件
-          with open(output_file, "w", encoding="utf-8") as f:
-              json.dump(data, f, ensure_ascii=False, indent=2)
-
-          print("JSON 文件处理完成，保存为:", output_file)
-          EOF
-
-      # 第六步：对比 MD5 并判断是否需要上传
-      - name: 对比 MD5 并判断是否需要上传
-        id: compare_md5
-        run: |
-          PROCESSED_MD5=$(md5sum "${{ env.FINAL_JSON }}" | awk '{print $1}')
-          echo "处理后 JSON 文件的 MD5: $PROCESSED_MD5"
-
-          if [[ "$ORIGINAL_MD5" != "$PROCESSED_MD5" ]]; then
-              echo "JSON 数据已修改。"
-              echo "changed=true" >> $GITHUB_OUTPUT
-          else
-              echo "JSON 数据未修改，无需上传。"
-              echo "changed=false" >> $GITHUB_OUTPUT
-          fi
-
-      # 第七步：对比 spider 字段
-      - name: 对比 spider 字段
-        id: compare_spider
         run: |
           CURRENT_SPIDER_MD5=$(md5sum <<< $(jq -r '.spider' 9280.json) | awk '{print $1}')
           echo "当前 Spider 字段的 MD5: $CURRENT_SPIDER_MD5"
 
           if [[ "$CURRENT_SPIDER_MD5" != "$PREVIOUS_SPIDER_MD5" ]]; then
-              echo "Spider 字段已修改。"
-              echo "spider_changed=true" >> $GITHUB_OUTPUT
+            echo "Spider 字段已修改，正在处理 JSON 文件..."
+
+            # 运行 Python 脚本处理 JSON 数据
+            python3 <<EOF
+            import json
+            import hashlib
+
+            # 输入和输出文件路径
+            input_file = "9280.json"
+            output_file = "${{ env.FINAL_JSON }}"
+
+            # 需要删除的键列表
+            keys_to_delete = [
+                "Doubana", "Wexconfig", "WexrenrenGuard", "mingriyingshi", "Fujutv", "SubaibaiGuard", "csp_Nmys",
+                "Wexliyuan", "Wextangdou", "Wexergeduoduo", "Wexbaobaobashi", "Wexbeiwa", "Wextuxiaobei", "Pandalivetv",
+                "Iktv", "WexDm84", "WexYsj", "自定义", "AList", "bili", "biliych", "Wexqingfengdj", "Wexxsmp3", "Wexpsmp3",
+                "Wexwwe", "看球", "926看球", "1直播", "Wexduanjuquark", "Wexduanjuvop", "Wexduanjuhema", "WexduanjuvmpGuard",
+                "Wexduanju001", "非凡", "木耳", "360", "爱坤", "Wexyingchao"
+            ]
+
+            # 读取原始 JSON 文件
+            with open(input_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            # 删除不需要的键
+            if "doh" in data:
+                del data["doh"]
+            if "lives" in data:
+                del data["lives"]
+
+            # 修改特定键的名称
+            for site in data.get("sites", []):
+                if site.get("key") == "Douban":
+                    site["name"] = "🐮【推荐】🐮"
+                elif site.get("key") == "Wexokconfig":
+                    site["name"] = "🐮配置中心🐮"
+                elif site.get("key") == "Wexnullname":
+                    site["name"] = "💓观影┃4K💓"
+
+            # 过滤掉不需要的站点
+            data["sites"] = [site for site in data.get("sites", []) if site.get("key") not in keys_to_delete]
+
+            # 保存修改后的 JSON 文件
+            with open(output_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+
+            print("JSON 文件处理完成，保存为:", output_file)
+            EOF
+
+            # 标记 JSON 文件已修改
+            echo "changed=true" >> $GITHUB_OUTPUT
           else
-              echo "Spider 字段未修改。"
-              echo "spider_changed=false" >> $GITHUB_OUTPUT
+            echo "Spider 字段未修改，无需处理 JSON 文件。"
+            echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
-      # 第八步：上传文件到 Kstore（仅在 changed 为 true 时执行）
+      # 第六步：上传文件到 Kstore（仅在 changed 为 true 时执行）
       - name: 上传文件到 Kstore
-        if: steps.compare_md5.outputs.changed == 'true'
+        if: steps.modify_json.outputs.changed == 'true'
         run: |
           curl https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} -F "file=@${{ env.FINAL_JSON }}"
 
-      # 第九步：发布新的 Releases（仅在 spider_changed 为 true 时执行）
+      # 第七步：发布新的 Releases（仅在 changed 为 true 时执行）
       - name: 发布新的 Releases
-        if: steps.compare_spider.outputs.spider_changed == 'true'
+        if: steps.modify_json.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.PAT }}  # 使用 PAT
         run: |
