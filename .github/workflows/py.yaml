@@ -72,14 +72,14 @@ jobs:
           if [[ "$CURRENT_SPIDER_MD5" != "$PREVIOUS_SPIDER_MD5" ]]; then
             echo "Spider 字段已修改，正在处理 JSON 文件..."
 
-            # 运行 Python 脚本处理 JSON 数据
-            python3 <<EOF
+            # 将 Python 脚本保存为临时文件
+            cat << 'EOF' > process_json.py
             import json
             import hashlib
 
             # 输入和输出文件路径
             input_file = "9280.json"
-            output_file = "${{ env.FINAL_JSON }}"
+            output_file = "wex.json"
 
             # 需要删除的键列表
             keys_to_delete = [
@@ -118,6 +118,9 @@ jobs:
 
             print("JSON 文件处理完成，保存为:", output_file)
             EOF
+
+            # 运行 Python 脚本
+            python3 process_json.py
 
             # 标记 JSON 文件已修改
             echo "changed=true" >> $GITHUB_OUTPUT
