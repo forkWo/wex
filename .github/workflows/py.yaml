@@ -90,13 +90,17 @@ jobs:
               f.write(spider_md5)
           EOF
 
-      # 第四步：读取 spider 字段的 MD5
-      - name: 读取 spider 字段的 MD5
-        id: read_spider_md5
+      # 第四步：读取 spider 字段的 MD5 和内容
+      - name: 读取 spider 字段的 MD5 和内容
+        id: read_spider
         run: |
           SPIDER_MD5=$(cat spider_md5.txt)
+          SPIDER_CONTENT=$(cat spider_content.txt)
           echo "当前 spider 字段的 MD5: $SPIDER_MD5"
           echo "SPIDER_MD5=$SPIDER_MD5" >> $GITHUB_ENV
+          echo "SPIDER_CONTENT<<EOF" >> $GITHUB_ENV
+          echo "$SPIDER_CONTENT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       # 第五步：对比 spider 字段的 MD5
       - name: 对比 spider 字段的 MD5
@@ -140,7 +144,7 @@ jobs:
           body: |
             Spider 字段内容已更新，内容如下：
             ```
-            $(cat spider_content.txt)
+            ${{ env.SPIDER_CONTENT }}
             ```
           draft: false
           prerelease: false
