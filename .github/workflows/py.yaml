@@ -80,25 +80,67 @@ jobs:
               json.dump(data, f, ensure_ascii=False, indent=2)
 
           print("JSON 文件处理完成，保存为:", output_file)
+
+          # 提取 spider 字段内容并计算 MD5
+          spider_content = json.dumps(data.get("spider", {}), ensure_ascii=False, indent=2)
+          spider_md5 = hashlib.md5(spider_content.encode("utf-8")).hexdigest()
+          with open("spider_content.txt", "w", encoding="utf-8") as f:
+              f.write(spider_content)
+          with open("spider_md5.txt", "w", encoding="utf-8") as f:
+              f.write(spider_md5)
           EOF
 
-      # 第四步：对比 MD5 并判断是否需要上传
-      - name: 对比 MD5 并判断是否需要上传
-        id: compare_md5
+      # 第四步：读取 spider 字段的 MD5
+      - name: 读取 spider 字段的 MD5
+        id: read_spider_md5
         run: |
-          PROCESSED_MD5=$(md5sum "${{ env.FINAL_JSON }}" | awk '{print $1}')
-          echo "处理后 JSON 文件的 MD5: $PROCESSED_MD5"
+          SPIDER_MD5=$(cat spider_md5.txt)
+          echo "当前 spider 字段的 MD5: $SPIDER_MD5"
+          echo "SPIDER_MD5=$SPIDER_MD5" >> $GITHUB_ENV
 
-          if [[ "$ORIGINAL_MD5" != "$PROCESSED_MD5" ]]; then
-              echo "JSON 数据已修改。"
-              echo "changed=true" >> $GITHUB_OUTPUT
+      # 第五步：对比 spider 字段的 MD5
+      - name: 对比 spider 字段的 MD5
+        id: compare_spider_md5
+        run: |
+          # 获取上一次的 spider 字段 MD5（假设保存在环境变量中）
+          if [[ -f "last_spider_md5.txt" ]]; then
+              LAST_SPIDER_MD5=$(cat last_spider_md5.txt)
+              echo "上一次 spider 字段的 MD5: $LAST_SPIDER_MD5"
           else
-              echo "JSON 数据未修改，无需上传。"
-              echo "changed=false" >> $GITHUB_OUTPUT
+              LAST_SPIDER_MD5=""
+              echo "未找到上一次的 spider 字段 MD5。"
           fi
 
-      # 第五步：上传文件到 Kstore（仅在 changed 为 true 时执行）
+          # 对比 MD5
+          if [[ "$SPIDER_MD5" != "$LAST_SPIDER_MD5" ]]; then
+              echo "spider 字段已修改。"
+              echo "spider_changed=true" >> $GITHUB_OUTPUT
+              echo "$SPIDER_MD5" > last_spider_md5.txt
+          else
+              echo "spider 字段未修改，无需上传和发布。"
+              echo "spider_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      # 第六步：上传文件到 Kstore（仅在 spider_changed 为 true 时执行）
       - name: 上传文件到 Kstore
-        if: steps.compare_md5.outputs.changed == 'true'
+        if: steps.compare_spider_md5.outputs.spider_changed == 'true'
         run: |
           curl https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} -F "file=@${{ env.FINAL_JSON }}"
+
+      # 第七步：发布 Releases（仅在 spider_changed 为 true 时执行）
+      - name: 发布 Releases
+        if: steps.compare_spider_md5.outputs.spider_changed == 'true'
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v1.0.0
+          release_name: Release v1.0.0
+          body: |
+            Spider 字段内容已更新，内容如下：
+            ```
+            $(cat spider_content.txt)
+            ```
+          draft: false
+          prerelease: false
