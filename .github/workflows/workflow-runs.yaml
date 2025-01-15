@@ -1,25 +1,56 @@
-name: Delete Workflow Runs
+name: Delete All Runs Workflow
 
 on:
-  workflow_dispatch: # 允许手动触发
+  workflow_dispatch:  # 允许手动触发
   schedule:
-    - cron: '0 0 * * *' # 每天午夜运行（可选）
+    - cron: '0 0 * * *'  # 每天午夜自动运行
 
 jobs:
-  delete-workflow-runs:
+  delete-all-runs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Delete all workflow runs
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }} # 使用默认的 GITHUB_TOKEN
-          REPO_OWNER: ${{ github.forkwo }} # 仓库所有者
-          REPO_NAME: ${{ github.box }} # 仓库名称
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
         run: |
-          curl -X DELETE \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/actions/runs"
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Delete all runs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub Token 进行认证
+        run: |
+          import os
+          import requests
+
+          # GitHub API URL to list workflow runs
+          repo = os.getenv('GITHUB_REPOSITORY')
+          url = f'https://api.github.com/repos/{repo}/actions/runs'
+
+          headers = {
+              'Authorization': f'token {os.getenv("GITHUB_TOKEN")}',
+              'Accept': 'application/vnd.github.v3+json'
+          }
+
+          # Fetch the list of all runs
+          response = requests.get(url, headers=headers)
+          runs = response.json().get('workflow_runs', [])
+
+          # Delete all runs
+          for run in runs:
+              run_id = run['id']
+              delete_url = f'https://api.github.com/repos/{repo}/actions/runs/{run_id}'
+              delete_response = requests.delete(delete_url, headers=headers)
+              if delete_response.status_code == 204:
+                  print(f'Deleted run {run_id}')
+              else:
+                  print(f'Failed to delete run {run_id}: {delete_response.status_code}')
+
+          print('All runs deleted successfully.')
