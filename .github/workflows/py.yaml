@@ -1,4 +1,4 @@
-name: Wex JSON Upload (Python)
+name: Wex JSON Upload and Cleanup
 
 on:
   push:
@@ -155,3 +155,22 @@ jobs:
 
           # 发布新的 Releases
           gh release create v$(date +%Y%m%d%H%M%S) --title "New Release $(date +%Y-%m-%d)" --notes "Spider MD5: $CURRENT_SPIDER_MD5"
+
+      # 第九步：删除旧的工作流运行记录
+      - name: 删除旧的工作流运行记录
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        run: |
+          # 获取工作流运行记录
+          RUNS=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs?per_page=100")
+
+          # 提取需要删除的运行记录 ID
+          OLD_RUN_IDS=$(echo "$RUNS" | jq -r '.workflow_runs[] | select(.status == "completed") | .id')
+
+          # 删除旧的工作流运行记录
+          for RUN_ID in $OLD_RUN_IDS; do
+            echo "正在删除工作流运行记录: $RUN_ID"
+            curl -s -X DELETE -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/runs/$RUN_ID"
+          done
