@@ -81,8 +81,6 @@ jobs:
       - name: 修改 JSON 文件
         if: steps.compare_spider.outputs.changed == 'true'
         run: |
-          echo "正在处理 JSON 文件..."
-
           # 直接运行 Python 脚本
           python3 <<EOF
           import json
@@ -98,7 +96,7 @@ jobs:
               "Wexliyuan", "Wextangdou", "Wexergeduoduo", "Wexbaobaobashi", "Wexbeiwa", "Wextuxiaobei", "Pandalivetv",
               "Iktv", "WexDm84", "WexYsj", "自定义", "AList", "bili", "biliych", "Wexqingfengdj", "Wexxsmp3", "Wexpsmp3",
               "Wexwwe", "看球", "926看球", "1直播", "Wexduanjuquark", "Wexduanjuvop", "Wexduanjuhema", "WexduanjuvmpGuard",
-              "Wexduanju001", "非凡", "木耳", "360", "爱坤", "Wexyingchao"
+              "Wexduanju001", "非凡", "木耳", "360", "爱坤", "Wexyingchao", "Wexalllive"
           ]
 
           # 读取原始 JSON 文件
