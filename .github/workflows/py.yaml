@@ -1,4 +1,4 @@
-name: Wex JSON Upload and Cleanup
+name: Wex JSON Upload and Cleanup (Optimized)
 
 on:
   push:
@@ -81,7 +81,6 @@ jobs:
       - name: 修改 JSON 文件
         if: steps.compare_spider.outputs.changed == 'true'
         run: |
-          # 直接运行 Python 脚本
           python3 <<EOF
           import json
           import hashlib
@@ -159,7 +158,7 @@ jobs:
       # 第九步：删除旧的工作流运行记录
       - name: 删除旧的工作流运行记录
         env:
-          GH_TOKEN: ${{ secrets.PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # 获取工作流运行记录
           RUNS=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
