@@ -162,7 +162,7 @@ jobs:
         run: |
           # 获取工作流运行记录
           RUNS=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/runs?per_page=1400")
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs?per_page=100")
 
           # 提取需要删除的运行记录 ID
           OLD_RUN_IDS=$(echo "$RUNS" | jq -r '.workflow_runs[] | select(.status == "completed") | .id')
