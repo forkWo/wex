@@ -1,4 +1,4 @@
-name: Wex JSON Upload and Cleanup (Optimized)
+name: Wex JSON Upload
 
 on:
   push:
