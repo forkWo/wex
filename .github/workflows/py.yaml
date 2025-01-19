@@ -122,12 +122,14 @@ jobs:
 
           # 重新排序 sites 数组，将 "玩偶" 放在 "Wexokconfig" 后面
           def sort_sites(site):
-              if site.get("key") == "Wexokconfig":
+              if site.get("key") == "Douban":
                   return 1
-              elif site.get("key") == "玩偶":
+              elif site.get("key") == "Wexokconfig":
                   return 2
-              else:
+              elif site.get("key") == "玩偶":
                   return 3
+              else:
+                  return 4
 
           data["sites"].sort(key=sort_sites)
 
