@@ -120,6 +120,17 @@ jobs:
           # 过滤掉不需要的站点
           data["sites"] = [site for site in data.get("sites", []) if site.get("key") not in keys_to_delete]
 
+          # 重新排序 sites 数组，将 "玩偶" 放在 "Wexokconfig" 后面
+          def sort_sites(site):
+              if site.get("key") == "Wexokconfig":
+                  return 1
+              elif site.get("key") == "玩偶":
+                  return 2
+              else:
+                  return 3
+
+          data["sites"].sort(key=sort_sites)
+
           # 保存修改后的 JSON 文件
           with open(output_file, "w", encoding="utf-8") as f:
               json.dump(data, f, ensure_ascii=False, indent=2)
