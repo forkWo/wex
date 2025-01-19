@@ -164,7 +164,7 @@ jobs:
           CURRENT_SPIDER_MD5=$(md5sum <<< $(jq -r '.spider' 9280.json) | awk '{print $1}')
 
           # 发布新的 Releases
-          gh release create v$(date +%Y%m%d%H%M%S) --title "New Release $(date +%Y-%m-%d)" --notes "Spider MD5: $CURRENT_SPIDER_MD5"
+          gh release create v$(date +%Y%m%d%H%M%S) --title "$(date +%Y-%m-%d)" --notes "Spider MD5: $CURRENT_SPIDER_MD5"
 
       # 第九步：删除旧的工作流运行记录
       - name: 删除旧的工作流运行记录
