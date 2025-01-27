@@ -91,11 +91,38 @@ jobs:
 
           # 需要删除的键列表
           keys_to_delete = [
-              "Doubana", "Wexconfig", "WexrenrenGuard", "mingriyingshi", "Fujutv", "SubaibaiGuard", "csp_Nmys",
-              "Wexliyuan", "Wextangdou", "Wexergeduoduo", "Wexbaobaobashi", "Wexbeiwa", "Wextuxiaobei", "Pandalivetv",
-              "Iktv", "WexDm84", "WexYsj", "自定义", "AList", "bili", "biliych", "Wexqingfengdj", "Wexxsmp3", "Wexpsmp3",
-              "Wexwwe", "看球", "926看球", "1直播", "Wexduanjuquark", "Wexduanjuvop", "Wexduanjuhema", "WexduanjuvmpGuard",
-              "Wexduanju001", "非凡", "木耳", "360", "爱坤", "Wexyingchao", "Wexalllive", "WexshijueGuard", "WexpipixiaGuard", Wexbaipiao", "WexduanjuvipGuard"
+              "Doubana", 
+              "Wexconfig", 
+              "Wexalllive", 
+              "mingriyingshi", 
+              "Fujutv", 
+              "Wexsaohuo", 
+              "csp_Nmys",
+              "非凡","木耳", 
+              "360", "爱坤", 
+              "Wexhanxiaoquan", 
+              "Wexduanjuquark", 
+              "Wexduanjuvop", 
+              "Wexduanjuhema", 
+              "WexduanjuvmpGuard", 
+              "WexduanjuvipGuard", 
+              "Wexduanju001", 
+              "Wexliyuan", 
+              "Wextangdou", 
+              "Wexbaobaobashi", 
+              "Wexbeiwa", 
+              "Wextuxiaobei", 
+              "Pandalivetv", 
+              "Iktv", "自定义", 
+              "AList","bili",
+              "biliych", 
+              "Wexqingfengdj", 
+              "Wexxsmp3", 
+              "Wexpsmp3", 
+              "Wexwwe", 
+              "看球", 
+              "926看球", 
+              "1直播",
           ]
 
           # 读取原始 JSON 文件
