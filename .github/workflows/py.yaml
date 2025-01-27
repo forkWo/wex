@@ -17,14 +17,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 第一步：设置 Python 环境
       - name: 设置 Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.x"
 
+      # 第二步：安装 jq 工具
       - name: 安装 jq
         run: sudo apt-get install -y jq
 
+      # 第三步：下载 JSON 文件
       - name: 下载 JSON 数据
         id: download_json
         run: |
@@ -33,6 +36,7 @@ jobs:
           echo "原始 JSON 文件的 MD5: $ORIGINAL_MD5"
           echo "ORIGINAL_MD5=$ORIGINAL_MD5" >> $GITHUB_ENV
 
+      # 第四步：获取上一个 Releases 版本的 spider MD5
       - name: 获取上一个 Releases 版本的 spider MD5
         id: get_previous_spider_md5
         env:
@@ -58,6 +62,7 @@ jobs:
             echo "PREVIOUS_SPIDER_MD5=$PREVIOUS_SPIDER_MD5" >> $GITHUB_ENV
           fi
 
+      # 第五步：对比 spider 字段
       - name: 对比 spider 字段
         id: compare_spider
         run: |
@@ -72,6 +77,7 @@ jobs:
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
+      # 第六步：修改 JSON 文件（仅在 changed 为 true 时执行）
       - name: 修改 JSON 文件
         if: steps.compare_spider.outputs.changed == 'true'
         run: |
@@ -79,7 +85,8 @@ jobs:
           import json
           import hashlib
 
-           input_file = "9280.json"
+          # 输入和输出文件路径
+          input_file = "9280.json"
           output_file = "${{ env.FINAL_JSON }}"
 
           # 需要删除的键列表
@@ -119,14 +126,17 @@ jobs:
               "1直播",
           ]
 
+          # 读取原始 JSON 文件
           with open(input_file, "r", encoding="utf-8") as f:
               data = json.load(f)
 
+          # 删除不需要的键
           if "doh" in data:
               del data["doh"]
           if "lives" in data:
               del data["lives"]
 
+          # 修改特定键的名称
           for site in data.get("sites", []):
               if site.get("key") == "Douban":
                   site["name"] = "🐮【推荐】🐮"
@@ -135,8 +145,10 @@ jobs:
               elif site.get("key") == "Wexnullname":
                   site["name"] = "💓观影┃4K💓"
 
+          # 过滤掉不需要的站点
           data["sites"] = [site for site in data.get("sites", []) if site.get("key") not in keys_to_delete]
 
+          # 重新排序 sites 数组，将 "玩偶" 放在 "Wexokconfig" 后面
           def sort_sites(site):
               if site.get("key") == "Douban":
                   return 1
@@ -149,43 +161,54 @@ jobs:
 
           data["sites"].sort(key=sort_sites)
 
-           with open(output_file, "w", encoding="utf-8") as f:
+          # 保存修改后的 JSON 文件
+          with open(output_file, "w", encoding="utf-8") as f:
               json.dump(data, f, ensure_ascii=False, indent=2)
 
           print("JSON 文件处理完成，保存为:", output_file)
           EOF
 
-       - name: 上传文件到 Kstore
+      # 第七步：上传文件到 Kstore（仅在 changed 为 true 时执行）
+      - name: 上传文件到 Kstore
         if: steps.compare_spider.outputs.changed == 'true'
         run: |
           curl https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} -F "file=@${{ env.FINAL_JSON }}"
 
+      # 第八步：发布新的 Releases（仅在 changed 为 true 时执行）
       - name: 发布新的 Releases
         if: steps.compare_spider.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.PAT }}  # 使用 PAT
         run: |
+          # 切换到 GitHub Actions 的默认工作目录
           cd $GITHUB_WORKSPACE
 
+          # 检查当前目录是否是 Git 仓库
           if ! git rev-parse --git-dir > /dev/null 2>&1; then
             echo "当前目录不是 Git 仓库，正在初始化 Git 仓库..."
             git init
             git remote add origin https://github.com/${{ github.repository }}.git
           fi
 
+          # 提取当前 Spider 字段的 MD5
           CURRENT_SPIDER_MD5=$(md5sum <<< $(jq -r '.spider' 9280.json) | awk '{print $1}')
 
+          # 发布新的 Releases
           gh release create v$(date +%Y%m%d%H%M%S) --title "$(date +%Y-%m-%d)" --notes "Spider MD5: $CURRENT_SPIDER_MD5"
 
+      # 第九步：删除旧的工作流运行记录
       - name: 删除旧的工作流运行记录
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-           RUNS=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+          # 获取工作流运行记录
+          RUNS=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runs?per_page=100")
 
+          # 提取需要删除的运行记录 ID
           OLD_RUN_IDS=$(echo "$RUNS" | jq -r '.workflow_runs[] | select(.status == "completed") | .id')
 
+          # 删除旧的工作流运行记录
           for RUN_ID in $OLD_RUN_IDS; do
             echo "正在删除工作流运行记录: $RUN_ID"
             curl -s -X DELETE -H "Authorization: Bearer $GH_TOKEN" \
