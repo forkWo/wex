@@ -190,11 +190,14 @@ jobs:
             git remote add origin https://github.com/${{ github.repository }}.git
           fi
 
-          # 提取当前 Spider 字段的 MD5
+          # 提取当前 Spider 字段的 MD5 和完整内容
           CURRENT_SPIDER_MD5=$(md5sum <<< $(jq -r '.spider' 9280.json) | awk '{print $1}')
+          CURRENT_SPIDER_CONTENT=$(jq -r '.spider' 9280.json)
 
           # 发布新的 Releases
-          gh release create v$(date +%Y%m%d%H%M%S) --title "$(date +%Y-%m-%d)" --notes "Spider MD5: $CURRENT_SPIDER_MD5"
+          gh release create v$(date +%Y%m%d%H%M%S) \
+            --title "Release $(date +%Y-%m-%d %H:%M:%S)" \
+            --notes "Spider MD5: $CURRENT_SPIDER_MD5\n\nSpider Content:\n$CURRENT_SPIDER_CONTENT"
 
       # 第九步：删除旧的工作流运行记录
       - name: 删除旧的工作流运行记录
