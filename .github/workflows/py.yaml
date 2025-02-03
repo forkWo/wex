@@ -6,85 +6,61 @@ on:
       - wex
   workflow_dispatch:
   schedule:
-    - cron: '*/10 * * * *' # 每 10 分钟触发一次
+    - cron: '*/10 * * * *'
 
 env:
   JSON_URL: "https://9280.kstore.space/wex.json"
-  FINAL_JSON: "wex.json" # 最终文件命名为 wex.json
+  FINAL_JSON: "wex.json"
 
 jobs:
   modify:
     runs-on: ubuntu-latest
-
     steps:
-      # 第一步：设置 Python 环境
       - name: 设置 Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.x"
 
-      # 第二步：安装 jq 工具
-      - name: 安装 jq
+      - name: 安装依赖
         run: sudo apt-get install -y jq
 
-      # 第三步：下载 JSON 文件
       - name: 下载 JSON 数据
-        id: download_json
-        run: |
-          curl -s "${{ env.JSON_URL }}" -o 9280.json
-          echo "JSON 文件下载完成。"
+        run: curl -s "${{ env.JSON_URL }}" -o 9280.json
 
-      # 第四步：获取完整的 spider 字段
-      - name: 获取完整的 spider 字段
-        id: get_spider_content
+      - name: 提取 Spider 内容
+        id: spider
         run: |
-          SPIDER_CONTENT=$(jq -r '.spider' 9280.json)
-          echo "当前 Spider 字段内容: $SPIDER_CONTENT"
+          SPIDER_CONTENT=$(jq -r '.spider' 9280.json | sed 's/\\n/\\\\n/g')
           echo "SPIDER_CONTENT<<EOF" >> $GITHUB_ENV
-          echo "$SPIDER_CONTENT" >> $GITHUB_ENV
+          echo -e "$SPIDER_CONTENT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      # 第五步：获取上一个 Releases 版本的 spider 字段
-      - name: 获取上一个 Releases 版本的 spider 字段
-        id: get_previous_spider_content
+      - name: 获取历史 Spider
+        id: history
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}  # 使用 PAT
+          GITHUB_TOKEN: ${{ secrets.PAT }}
         run: |
-          LATEST_RELEASE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/${{ github.repository }}/releases/latest)
-          echo "GitHub API 响应: $LATEST_RELEASE"  # 调试输出
+          RESP=$(curl -sf -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/latest")
 
-          # 检查是否有 Releases
-          if [[ $(echo "$LATEST_RELEASE" | jq -r '.message') == "Not Found" ]]; then
-            echo "仓库中没有 Releases，跳过对比。"
-            echo "PREVIOUS_SPIDER_CONTENT=no_releases" >> $GITHUB_ENV
+          if [[ $(jq -r '.message' <<< "$RESP") == "Not Found" ]]; then
+            echo "PREVIOUS_SPIDER=no_history" >> $GITHUB_ENV
           else
-            # 提取 body 内容
-            BODY=$(echo "$LATEST_RELEASE" | jq -r '.body')
-            echo "body 内容: $BODY"  # 调试输出
-
-            # 提取完整的 spider 字段内容
-            PREVIOUS_SPIDER_CONTENT=$(echo "$BODY" | grep -oP 'Spider Content: \K.*')
-            echo "提取的 Spider 字段内容: $PREVIOUS_SPIDER_CONTENT"  # 调试输出
-
-            # 将内容写入环境变量
-            echo "PREVIOUS_SPIDER_CONTENT=$PREVIOUS_SPIDER_CONTENT" >> $GITHUB_ENV
+            BODY=$(jq -r '.body' <<< "$RESP")
+            echo -e "PREVIOUS_SPIDER=$(awk '/Spider Content: /{sub(/.*: /, ""); print}' <<< "$BODY")" >> $GITHUB_ENV
           fi
 
-      # 第六步：对比 spider 字段
-      - name: 对比 spider 字段
-        id: compare_spider
+      - name: 对比内容
+        id: comparator
         run: |
-          if [[ "$SPIDER_CONTENT" != "$PREVIOUS_SPIDER_CONTENT" ]]; then
-            echo "Spider 字段已修改，需要处理 JSON 文件。"
+          if [[ "$SPIDER_CONTENT" != "$PREVIOUS_SPIDER" ]]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
-            echo "Spider 字段未修改，无需处理 JSON 文件。"
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
-      # 第七步：修改 JSON 文件（仅在 changed 为 true 时执行）
-      - name: 修改 JSON 文件
-        if: steps.compare_spider.outputs.changed == 'true'
+      - name: 处理 JSON
+        if: steps.comparator.outputs.changed == 'true'
         run: |
           python3 <<EOF
           import json
@@ -173,46 +149,29 @@ jobs:
           print("JSON 文件处理完成，保存为:", output_file)
           EOF
 
-      # 第八步：上传文件到 Kstore（仅在 changed 为 true 时执行）
-      - name: 上传文件到 Kstore
-        if: steps.compare_spider.outputs.changed == 'true'
+      - name: 上传文件
+        if: steps.comparator.outputs.changed == 'true'
         run: |
-          curl https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} -F "file=@${{ env.FINAL_JSON }}"
+          curl -sSf -o /dev/null \
+            https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} \
+            -F "file=@${{ env.FINAL_JSON }}"
 
-      # 第九步：发布新的 Releases（仅在 changed 为 true 时执行）
-      - name: 发布新的 Releases
-        if: steps.compare_spider.outputs.changed == 'true'
+      - name: 发布版本
+        if: steps.comparator.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ secrets.PAT }}  # 使用 PAT
+          GH_TOKEN: ${{ secrets.PAT }}
         run: |
-          # 切换到 GitHub Actions 的默认工作目录
-          cd $GITHUB_WORKSPACE
+          gh release create v$(date +%s) \
+            --title "Auto-Release $(date +%F)" \
+            --notes "Spider Content: $SPIDER_CONTENT"
 
-          # 检查当前目录是否是 Git 仓库
-          if ! git rev-parse --git-dir > /dev/null 2>&1; then
-            echo "当前目录不是 Git 仓库，正在初始化 Git 仓库..."
-            git init
-            git remote add origin https://github.com/${{ github.repository }}.git
-          fi
-
-          # 发布新的 Releases，包含完整的 spider 字段内容
-          gh release create v$(date +%Y%m%d%H%M%S) --title "$(date +%Y-%m-%d)" --notes "Spider Content: $SPIDER_CONTENT"
-
-      # 第十步：删除旧的工作流运行记录
-      - name: 删除旧的工作流运行记录
+      - name: 清理历史
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # 获取工作流运行记录
-          RUNS=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+          RUNS=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runs?per_page=100")
-
-          # 提取需要删除的运行记录 ID
-          OLD_RUN_IDS=$(echo "$RUNS" | jq -r '.workflow_runs[] | select(.status == "completed") | .id')
-
-          # 删除旧的工作流运行记录
-          for RUN_ID in $OLD_RUN_IDS; do
-            echo "正在删除工作流运行记录: $RUN_ID"
-            curl -s -X DELETE -H "Authorization: Bearer $GH_TOKEN" \
-              "https://api.github.com/repos/${{ github.repository }}/actions/runs/$RUN_ID"
-          done
+          
+          jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[5:][] | .id' <<< "$RUNS" | \
+            xargs -I{} curl -sf -X DELETE -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/{}"
