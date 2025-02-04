@@ -156,7 +156,7 @@ jobs:
         if: steps.comparator.outputs.changed == 'true'
         run: |
           curl -sSf -o /dev/null \
-            https://upload.kstore.dev/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} \
+            https://upload.kstore.space/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} \
             -F "file=@${{ env.FINAL_JSON }}"
 
       - name: 发布版本
