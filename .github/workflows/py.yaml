@@ -165,7 +165,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT }}
         run: |
           gh release create v$(date +%s) \
-            --title "Auto-Release $(date +%F)" \
+            --title "$(date +%F)" \
             --notes "Spider Content: $SPIDER_CONTENT" \
             --target ${{ github.sha }}
 
