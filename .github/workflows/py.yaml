@@ -16,16 +16,28 @@ jobs:
   modify:
     runs-on: ubuntu-latest
     steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整提交历史
+
+      - name: 配置 Git 环境
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
       - name: 设置 Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"  # 使用固定版本加快速度
+          python-version: "3.10"
 
       - name: 安装依赖
-        run: sudo apt-get install -y jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
 
       - name: 下载 JSON 数据
-        run: curl -s --compressed "${{ env.JSON_URL }}" -o 9280.json  # 启用压缩传输
+        run: curl -s --compressed "${{ env.JSON_URL }}" -o 9280.json
 
       - name: 提取并处理 Spider 内容
         id: spider
@@ -72,11 +84,7 @@ jobs:
               "Wexokconfig": "🐮配置中心🐮",
               "Wexnullname": "💓观影┃4K💓"
           }
-          PRIORITY_MAP = {
-              "Douban": 1, 
-              "Wexokconfig": 2, 
-              "玩偶": 3
-          }
+          PRIORITY_MAP = {"Douban": 1, "Wexokconfig": 2, "玩偶": 3}
           KEYS_TO_DELETE = [
               "Doubana", #⬇️【网盘类先扫码】⬇️
               "Wexconfig", #🐮通用类型┃配置中心🐮
@@ -158,7 +166,8 @@ jobs:
         run: |
           gh release create v$(date +%s) \
             --title "Auto-Release $(date +%F)" \
-            --notes "Spider Content: $SPIDER_CONTENT"
+            --notes "Spider Content: $SPIDER_CONTENT" \
+            --target ${{ github.sha }}
 
       - name: 清理历史
         env:
