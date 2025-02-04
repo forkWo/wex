@@ -19,21 +19,19 @@ jobs:
       - name: 设置 Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.x"
+          python-version: "3.10"  # 使用固定版本加快速度
 
       - name: 安装依赖
         run: sudo apt-get install -y jq
 
       - name: 下载 JSON 数据
-        run: curl -s "${{ env.JSON_URL }}" -o 9280.json
+        run: curl -s --compressed "${{ env.JSON_URL }}" -o 9280.json  # 启用压缩传输
 
-      - name: 提取 Spider 内容
+      - name: 提取并处理 Spider 内容
         id: spider
         run: |
-          SPIDER_CONTENT=$(jq -r '.spider' 9280.json | sed 's/\\n/\\\\n/g')
-          echo "SPIDER_CONTENT<<EOF" >> $GITHUB_ENV
-          echo -e "$SPIDER_CONTENT" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          SPIDER_CONTENT=$(jq -r '.spider | gsub("\\n"; "\\\\n")' 9280.json)
+          echo "SPIDER_CONTENT=$SPIDER_CONTENT" >> $GITHUB_ENV
 
       - name: 获取历史 Spider
         id: history
@@ -43,12 +41,15 @@ jobs:
           RESP=$(curl -sf -H "Authorization: Bearer $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/releases/latest")
 
-          if [[ $(jq -r '.message' <<< "$RESP") == "Not Found" ]]; then
-            echo "PREVIOUS_SPIDER=no_history" >> $GITHUB_ENV
-          else
-            BODY=$(jq -r '.body' <<< "$RESP")
-            echo -e "PREVIOUS_SPIDER=$(awk '/Spider Content: /{sub(/.*: /, ""); print}' <<< "$BODY")" >> $GITHUB_ENV
-          fi
+          PREVIOUS_SPIDER=$(jq -r '
+            if .message == "Not Found" then
+              "no_history"
+            else
+              (.body | split("Spider Content: ")[1] // "")
+            end
+          ' <<< "$RESP")
+
+          echo "PREVIOUS_SPIDER=$PREVIOUS_SPIDER" >> $GITHUB_ENV
 
       - name: 对比内容
         id: comparator
@@ -64,14 +65,19 @@ jobs:
         run: |
           python3 <<EOF
           import json
-          import hashlib
 
-          # 输入和输出文件路径
-          input_file = "9280.json"
-          output_file = "${{ env.FINAL_JSON }}"
-
-          # 需要删除的键列表
-          keys_to_delete = [
+          # 配置映射
+          NAME_MAPPING = {
+              "Douban": "🐮【推荐】🐮",
+              "Wexokconfig": "🐮配置中心🐮",
+              "Wexnullname": "💓观影┃4K💓"
+          }
+          PRIORITY_MAP = {
+              "Douban": 1, 
+              "Wexokconfig": 2, 
+              "玩偶": 3
+          }
+          KEYS_TO_DELETE = [
               "Doubana", #⬇️【网盘类先扫码】⬇️
               "Wexconfig", #🐮通用类型┃配置中心🐮
               "Wexalllive", #💓‍聚合┃直播💓
@@ -107,46 +113,35 @@ jobs:
               "1直播",
           ]
 
-          # 读取原始 JSON 文件
-          with open(input_file, "r", encoding="utf-8") as f:
+          # 读取原始 JSON
+          with open("9280.json", "r", encoding="utf-8") as f:
               data = json.load(f)
 
-          # 删除不需要的键
-          if "doh" in data:
-              del data["doh"]
-          if "lives" in data:
-              del data["lives"]
+          # 删除顶层键
+          data.pop("doh", None)
+          data.pop("lives", None)
 
-          # 修改特定键的名称
+          # 处理站点数据
+          sites = []
           for site in data.get("sites", []):
-              if site.get("key") == "Douban":
-                  site["name"] = "🐮【推荐】🐮"
-              elif site.get("key") == "Wexokconfig":
-                  site["name"] = "🐮配置中心🐮"
-              elif site.get("key") == "Wexnullname":
-                  site["name"] = "💓观影┃4K💓"
+              key = site.get("key")
+              
+              if key in KEYS_TO_DELETE:
+                  continue
+              
+              # 更新站点名称
+              if key in NAME_MAPPING:
+                  site["name"] = NAME_MAPPING[key]
+              
+              sites.append(site)
 
-          # 过滤掉不需要的站点
-          data["sites"] = [site for site in data.get("sites", []) if site.get("key") not in keys_to_delete]
+          # 排序逻辑
+          sites.sort(key=lambda x: PRIORITY_MAP.get(x.get("key"), 4))
+          data["sites"] = sites
 
-          # 重新排序 sites 数组，将 "玩偶" 放在 "Wexokconfig" 后面
-          def sort_sites(site):
-              if site.get("key") == "Douban":
-                  return 1
-              elif site.get("key") == "Wexokconfig":
-                  return 2
-              elif site.get("key") == "玩偶":
-                  return 3
-              else:
-                  return 4
-
-          data["sites"].sort(key=sort_sites)
-
-          # 保存修改后的 JSON 文件
-          with open(output_file, "w", encoding="utf-8") as f:
+          # 保存结果
+          with open("${{ env.FINAL_JSON }}", "w", encoding="utf-8") as f:
               json.dump(data, f, ensure_ascii=False, indent=2)
-
-          print("JSON 文件处理完成，保存为:", output_file)
           EOF
 
       - name: 上传文件
