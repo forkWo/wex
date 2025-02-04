@@ -176,6 +176,6 @@ jobs:
           RUNS=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runs?per_page=100")
           
-          jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[5:][] | .id' <<< "$RUNS" | \
+          jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[30:][] | .id' <<< "$RUNS" | \
             xargs -I{} curl -sf -X DELETE -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runs/{}"
