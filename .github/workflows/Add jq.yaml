@@ -1,0 +1,44 @@
+name: Add jq to Repository
+
+on:
+  push:
+    branches:
+      - 1  # 触发工作流的分支
+
+jobs:
+  add-jq:
+    runs-on: ubuntu-latest  # 使用最新的 Ubuntu 环境
+
+    steps:
+      # 1. 检出仓库
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 获取完整的 Git 历史记录
+
+      # 2. 下载 jq 二进制文件
+      - name: Download jq
+        run: |
+          mkdir -p bin  # 创建 bin 目录
+          curl -L -o bin/jq https://github.com/jqlang/jq/releases/download/jq-1.7/jq-linux64
+          chmod +x bin/jq  # 设置可执行权限
+
+      # 3. 检查是否有变化
+      - name: Check for changes
+        id: changes
+        run: |
+          git add bin/jq
+          if git diff --cached --quiet; then
+            echo "::set-output name=has_changes::false"
+          else
+            echo "::set-output name=has_changes::true"
+          fi
+
+      # 4. 提交更改（如果有变化）
+      - name: Commit changes
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "Add jq binary to repository [skip ci]"
+          git push
