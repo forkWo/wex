@@ -29,33 +29,10 @@ jobs:
       - name: 安装依赖
         run: |
           sudo apt-get install -y jq
-          pip install requests
-
+      
       - name: 下载 JSON 数据
-        run: |
-          python3 <<EOF
-          import requests
+        run: curl -s --compressed "${{ env.JSON_URL }}" -o 9280.json
 
-          headers = {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-              "Accept": "application/json, text/plain, */*",
-              "Accept-Language": "en-US,en;q=0.9",
-              "Accept-Encoding": "gzip, deflate, br",
-              "Connection": "keep-alive",
-              "Referer": "https://example.com/",
-              "Sec-Fetch-Dest": "empty",
-              "Sec-Fetch-Mode": "cors",
-              "Sec-Fetch-Site": "same-origin"
-          }
-
-          response = requests.get("${{ env.JSON_URL }}", headers=headers, stream=True)
-          response.raise_for_status()
-
-          with open("9280.json", "wb") as f:
-              for chunk in response.iter_content(chunk_size=8192):
-                  f.write(chunk)
-          EOF
-          
       - name: 提取并处理 Spider 内容
         id: spider
         run: |
@@ -177,7 +154,7 @@ jobs:
             https://upload.kstore.space/upload/${{ secrets.KSTORE_ID }}?access_token=${{ secrets.KSTORE_TOKEN }} \
             -F "file=@${{ env.FINAL_JSON }}"
 
-      - name: 发布版本
+      - name: 发布版本 (包含原始文件)
         if: steps.comparator.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.PAT }}
@@ -185,6 +162,8 @@ jobs:
           gh release create v$(date +%s) \
             --title "$(date +%F)" \
             --notes "Spider Content: $SPIDER_CONTENT" \
+            9280.json \
+            "${{ env.FINAL_JSON }}" \
             --target ${{ github.sha }}
 
       - name: 清理历史
