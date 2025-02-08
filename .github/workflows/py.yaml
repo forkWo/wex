@@ -9,7 +9,6 @@ on:
     - cron: '*/60 * * * *'
 
 env:
-  JSON_URL: "https://9280.kstore.space/wex.json"
   FINAL_JSON: "wex.json"
 
 jobs:
@@ -33,7 +32,7 @@ jobs:
       - name: 下载 JSON 数据
         run: |
           sudo apt-get install -y wget
-          wget --no-cache -O 9280.json "${{ env.JSON_URL }}"
+          wget --no-cache -O 9280.json "https://9280.kstore.space/wex.json"
       
       - name: 调试 JSON 内容
         run: |
