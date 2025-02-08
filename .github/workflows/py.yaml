@@ -33,7 +33,6 @@ jobs:
 
       - name: 安装依赖
         run: |
-          sudo apt-get update
           sudo apt-get install -y jq
       
       - name: 下载 JSON 数据
@@ -151,6 +150,7 @@ jobs:
           # 保存结果
           with open("${{ env.FINAL_JSON }}", "w", encoding="utf-8") as f:
               json.dump(data, f, ensure_ascii=False, indent=2)
+          EOF
 
       - name: 上传文件
         if: steps.comparator.outputs.changed == 'true'
