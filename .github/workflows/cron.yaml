@@ -6,7 +6,7 @@ on:
       - 1
   workflow_dispatch:
   schedule:
-    - cron: '*/40 * * * *' # 每 40 分钟触发一次
+#    - cron: '*/40 * * * *' # 每 40 分钟触发一次
 
 env:
   JSON_URL: "https://9280.kstore.space/wex.json"
