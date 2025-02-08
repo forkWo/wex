@@ -6,7 +6,7 @@ on:
       - wex
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/8 * * * *'
 
 env:
   JSON_URL: "https://9280.kstore.space/wex.json"
@@ -19,12 +19,7 @@ jobs:
       - name: 检出仓库
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 获取完整提交历史
-
-      - name: 配置 Git 环境
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
+          fetch-depth: 0
 
       - name: 设置 Python
         uses: actions/setup-python@v4
@@ -35,14 +30,21 @@ jobs:
         run: |
           sudo apt-get install -y jq
       
-      - name: 下载 JSON 数据
-        run: curl -s --compressed "${{ env.JSON_URL }}" -o 9280.json
+      - name: 下载 JSON 数据（强制更新）
+        run: |
+          # 添加时间戳参数绕过缓存
+          curl -f -s -H 'Cache-Control: no-cache, no-store' \
+            "${{ env.JSON_URL }}?ts=$(date +%s)" -o 9280.json || {
+            echo "::error::下载 JSON 失败"
+            exit 1
+          }
 
       - name: 提取并处理 Spider 内容
         id: spider
         run: |
           SPIDER_CONTENT=$(jq -r '.spider // "" | gsub("\n"; "\\n")' 9280.json)
-          echo "SPIDER_CONTENT=$SPIDER_CONTENT" >> $GITHUB_ENV
+          echo "提取的 Spider 长度: ${#SPIDER_CONTENT}"
+          echo "SPIDER_CONTENT=${SPIDER_CONTENT:0:50}..." >> $GITHUB_ENV
 
       - name: 获取历史 Spider
         id: history
@@ -50,8 +52,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT }}
         run: |
           RESP=$(curl -sf -H "Authorization: Bearer $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+            "https://api.github.com/repos/${{ github.repository }}/releases/latest" || echo '{"message": "Not Found"}')
 
+          echo "API 响应: $RESP"
+          
           PREVIOUS_SPIDER=$(jq -r '
             if .message == "Not Found" then
               "no_history"
@@ -60,14 +64,20 @@ jobs:
             end
           ' <<< "$RESP")
 
-          echo "PREVIOUS_SPIDER=$PREVIOUS_SPIDER" >> $GITHUB_ENV
+          echo "历史 Spider 长度: ${#PREVIOUS_SPIDER}"
+          echo "PREVIOUS_SPIDER=${PREVIOUS_SPIDER:0:50}..." >> $GITHUB_ENV
 
       - name: 对比内容
         id: comparator
         run: |
+          echo "当前 Spider（前50）: ${SPIDER_CONTENT:0:50}"
+          echo "历史 Spider（前50）: ${PREVIOUS_SPIDER:0:50}"
+          
           if [[ "$SPIDER_CONTENT" != "$PREVIOUS_SPIDER" ]]; then
+            echo "::notice::检测到内容变化"
             echo "changed=true" >> $GITHUB_OUTPUT
           else
+            echo "::notice::内容未变化"
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
@@ -176,6 +186,6 @@ jobs:
           RUNS=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runs?per_page=100")
           
-          jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[1:][] | .id' <<< "$RUNS" | \
+          jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[2:][] | .id' <<< "$RUNS" | \
             xargs -I{} curl -sf -X DELETE -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runs/{}"
