@@ -6,7 +6,7 @@ on:
       - wex
   workflow_dispatch:
   schedule:
-    - cron: '2/* * * * *'
+    - cron: '*/60 * * * *'
 
 env:
   FINAL_JSON: "wex.json"
