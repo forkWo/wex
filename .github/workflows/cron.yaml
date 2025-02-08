@@ -1,9 +1,9 @@
-name: Wex JSON Upload and Cleanup (Node.js)
+name: Wex JSON Upload and Cleanup (Optimized)
 
 on:
   push:
     branches:
-      - wex
+      - 1
   workflow_dispatch:
   schedule:
     - cron: '*/40 * * * *' # 每 40 分钟触发一次
@@ -17,18 +17,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 第一步：设置 Node.js 环境
-      - name: 设置 Node.js
-        uses: actions/setup-node@v3
+      # 第一步：设置 Python 环境
+      - name: 设置 Python
+        uses: actions/setup-python@v4
         with:
-          node-version: '18' # 使用 Node.js 18
-          cache: 'npm' # 缓存 npm 依赖
+          python-version: "3.x"
 
-      # 第二步：安装依赖
-      - name: 安装依赖
-        run: |
-          npm install axios md5 jq -g
-          npm install
+      # 第二步：安装 jq 工具
+      - name: 安装 jq
+        run: sudo apt-get install -y jq
 
       # 第三步：下载 JSON 文件
       - name: 下载 JSON 数据
@@ -45,45 +42,31 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}  # 使用 PAT
         run: |
-          node -e "
-          const axios = require('axios');
-          const { GITHUB_TOKEN, GITHUB_REPOSITORY } = process.env;
+          LATEST_RELEASE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/${{ github.repository }}/releases/latest)
+          echo "GitHub API 响应: $LATEST_RELEASE"  # 调试输出
 
-          axios.get('https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/latest', {
-            headers: { Authorization: \`Bearer \${GITHUB_TOKEN}\` }
-          })
-            .then(response => {
-              const body = response.data.body || '';
-              const md5Match = body.match(/Spider MD5: ([0-9a-f]{32})/);
-              if (md5Match) {
-                console.log(\`提取的 MD5 值: \${md5Match[1]}\`);
-                console.log(\`::set-env name=PREVIOUS_SPIDER_MD5::\${md5Match[1]}\`);
-              } else {
-                console.log('未找到 Spider MD5，跳过 MD5 对比。');
-                console.log('::set-env name=PREVIOUS_SPIDER_MD5::no_releases');
-              }
-            })
-            .catch(error => {
-              if (error.response && error.response.status === 404) {
-                console.log('仓库中没有 Releases，跳过 MD5 对比。');
-                console.log('::set-env name=PREVIOUS_SPIDER_MD5::no_releases');
-              } else {
-                console.error('获取 Releases 失败:', error.message);
-                process.exit(1);
-              }
-            });
-          "
+          # 检查是否有 Releases
+          if [[ $(echo "$LATEST_RELEASE" | jq -r '.message') == "Not Found" ]]; then
+            echo "仓库中没有 Releases，跳过 MD5 对比。"
+            echo "PREVIOUS_SPIDER_MD5=no_releases" >> $GITHUB_ENV
+          else
+            # 提取 body 内容
+            BODY=$(echo "$LATEST_RELEASE" | jq -r '.body')
+            echo "body 内容: $BODY"  # 调试输出
+
+            # 提取 MD5 值
+            PREVIOUS_SPIDER_MD5=$(echo "$BODY" | grep -oP 'Spider MD5: \K[0-9a-f]{32}')
+            echo "提取的 MD5 值: $PREVIOUS_SPIDER_MD5"  # 调试输出
+
+            # 将 MD5 值写入环境变量
+            echo "PREVIOUS_SPIDER_MD5=$PREVIOUS_SPIDER_MD5" >> $GITHUB_ENV
+          fi
 
       # 第五步：对比 spider 字段
       - name: 对比 spider 字段
         id: compare_spider
         run: |
-          CURRENT_SPIDER_MD5=$(node -e "
-            const fs = require('fs');
-            const md5 = require('md5');
-            const data = JSON.parse(fs.readFileSync('9280.json', 'utf8'));
-            console.log(md5(JSON.stringify(data.spider)));
-          ")
+          CURRENT_SPIDER_MD5=$(md5sum <<< $(jq -r '.spider' 9280.json) | awk '{print $1}')
           echo "当前 Spider 字段的 MD5: $CURRENT_SPIDER_MD5"
 
           if [[ "$CURRENT_SPIDER_MD5" != "$PREVIOUS_SPIDER_MD5" ]]; then
@@ -98,39 +81,51 @@ jobs:
       - name: 修改 JSON 文件
         if: steps.compare_spider.outputs.changed == 'true'
         run: |
-          node -e "
-          const fs = require('fs');
-          const inputFile = '9280.json';
-          const outputFile = process.env.FINAL_JSON;
+          python3 <<EOF
+          import json
+          import hashlib
 
-          const keysToDelete = [
-            'Doubana', 'Wexconfig', 'WexrenrenGuard', 'mingriyingshi', 'Fujutv', 'SubaibaiGuard', 'csp_Nmys',
-            'Wexliyuan', 'Wextangdou', 'Wexergeduoduo', 'Wexbaobaobashi', 'Wexbeiwa', 'Wextuxiaobei', 'Pandalivetv',
-            'Iktv', 'WexDm84', 'WexYsj', '自定义', 'AList', 'bili', 'biliych', 'Wexqingfengdj', 'Wexxsmp3', 'Wexpsmp3',
-            'Wexwwe', '看球', '926看球', '1直播', 'Wexduanjuquark', 'Wexduanjuvop', 'Wexduanjuhema', 'WexduanjuvmpGuard',
-            'Wexduanju001', '非凡', '木耳', '360', '爱坤', 'Wexyingchao', 'Wexalllive'
-          ];
+          # 输入和输出文件路径
+          input_file = "9280.json"
+          output_file = "${{ env.FINAL_JSON }}"
 
-          const data = JSON.parse(fs.readFileSync(inputFile, 'utf8'));
+          # 需要删除的键列表
+          keys_to_delete = [
+              "Doubana", "Wexconfig", "WexrenrenGuard", "mingriyingshi", "Fujutv", "SubaibaiGuard", "csp_Nmys",
+              "Wexliyuan", "Wextangdou", "Wexergeduoduo", "Wexbaobaobashi", "Wexbeiwa", "Wextuxiaobei", "Pandalivetv",
+              "Iktv", "WexDm84", "WexYsj", "自定义", "AList", "bili", "biliych", "Wexqingfengdj", "Wexxsmp3", "Wexpsmp3",
+              "Wexwwe", "看球", "926看球", "1直播", "Wexduanjuquark", "Wexduanjuvop", "Wexduanjuhema", "WexduanjuvmpGuard",
+              "Wexduanju001", "非凡", "木耳", "360", "爱坤", "Wexyingchao", "Wexalllive"
+          ]
 
-          // 删除不需要的键
-          if (data.doh) delete data.doh;
-          if (data.lives) delete data.lives;
+          # 读取原始 JSON 文件
+          with open(input_file, "r", encoding="utf-8") as f:
+              data = json.load(f)
 
-          // 修改特定键的名称
-          data.sites.forEach(site => {
-            if (site.key === 'Douban') site.name = '🐮【推荐】🐮';
-            if (site.key === 'Wexokconfig') site.name = '🐮配置中心🐮';
-            if (site.key === 'Wexnullname') site.name = '💓观影┃4K💓';
-          });
+          # 删除不需要的键
+          if "doh" in data:
+              del data["doh"]
+          if "lives" in data:
+              del data["lives"]
 
-          // 过滤掉不需要的站点
-          data.sites = data.sites.filter(site => !keysToDelete.includes(site.key));
+          # 修改特定键的名称
+          for site in data.get("sites", []):
+              if site.get("key") == "Douban":
+                  site["name"] = "🐮【推荐】🐮"
+              elif site.get("key") == "Wexokconfig":
+                  site["name"] = "🐮配置中心🐮"
+              elif site.get("key") == "Wexnullname":
+                  site["name"] = "💓观影┃4K💓"
 
-          // 保存修改后的 JSON 文件
-          fs.writeFileSync(outputFile, JSON.stringify(data, null, 2), 'utf8');
-          console.log(\`JSON 文件处理完成，保存为: \${outputFile}\`);
-          "
+          # 过滤掉不需要的站点
+          data["sites"] = [site for site in data.get("sites", []) if site.get("key") not in keys_to_delete]
+
+          # 保存修改后的 JSON 文件
+          with open(output_file, "w", encoding="utf-8") as f:
+              json.dump(data, f, ensure_ascii=False, indent=2)
+
+          print("JSON 文件处理完成，保存为:", output_file)
+          EOF
 
       # 第七步：上传文件到 Kstore（仅在 changed 为 true 时执行）
       - name: 上传文件到 Kstore
@@ -144,51 +139,37 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PAT }}  # 使用 PAT
         run: |
-          node -e "
-          const { execSync } = require('child_process');
-          const fs = require('fs');
-          const md5 = require('md5');
+          # 切换到 GitHub Actions 的默认工作目录
+          cd $GITHUB_WORKSPACE
 
-          // 提取当前 Spider 字段的 MD5
-          const data = JSON.parse(fs.readFileSync('9280.json', 'utf8'));
-          const currentSpiderMD5 = md5(JSON.stringify(data.spider));
+          # 检查当前目录是否是 Git 仓库
+          if ! git rev-parse --git-dir > /dev/null 2>&1; then
+            echo "当前目录不是 Git 仓库，正在初始化 Git 仓库..."
+            git init
+            git remote add origin https://github.com/${{ github.repository }}.git
+          fi
 
-          // 发布新的 Releases
-          const releaseName = \`v\${new Date().toISOString().replace(/[^0-9]/g, '')}\`;
-          const releaseTitle = \`New Release \${new Date().toISOString().split('T')[0]}\`;
-          const releaseNotes = \`Spider MD5: \${currentSpiderMD5}\`;
+          # 提取当前 Spider 字段的 MD5
+          CURRENT_SPIDER_MD5=$(md5sum <<< $(jq -r '.spider' 9280.json) | awk '{print $1}')
 
-          execSync(\`gh release create \${releaseName} --title '\${releaseTitle}' --notes '\${releaseNotes}'\`, {
-            stdio: 'inherit',
-            env: { ...process.env, GH_TOKEN: process.env.GH_TOKEN }
-          });
-          "
+          # 发布新的 Releases
+          gh release create v$(date +%Y%m%d%H%M%S) --title "New Release $(date +%Y-%m-%d)" --notes "Spider MD5: $CURRENT_SPIDER_MD5"
 
       # 第九步：删除旧的工作流运行记录
       - name: 删除旧的工作流运行记录
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          node -e "
-          const axios = require('axios');
-          const { GH_TOKEN, GITHUB_REPOSITORY } = process.env;
+          # 获取工作流运行记录
+          RUNS=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs?per_page=1400")
 
-          axios.get(\`https://api.github.com/repos/\${GITHUB_REPOSITORY}/actions/runs\`, {
-            headers: { Authorization: \`Bearer \${GH_TOKEN}\` }
-          })
-            .then(response => {
-              const runs = response.data.workflow_runs;
-              runs.forEach(run => {
-                if (run.status === 'completed') {
-                  console.log(\`正在删除工作流运行记录: \${run.id}\`);
-                  axios.delete(\`https://api.github.com/repos/\${GITHUB_REPOSITORY}/actions/runs/\${run.id}\`, {
-                    headers: { Authorization: \`Bearer \${GH_TOKEN}\` }
-                  });
-                }
-              });
-            })
-            .catch(error => {
-              console.error('删除工作流运行记录失败:', error.message);
-              process.exit(1);
-            });
-          "
+          # 提取需要删除的运行记录 ID
+          OLD_RUN_IDS=$(echo "$RUNS" | jq -r '.workflow_runs[] | select(.status == "completed") | .id')
+
+          # 删除旧的工作流运行记录
+          for RUN_ID in $OLD_RUN_IDS; do
+            echo "正在删除工作流运行记录: $RUN_ID"
+            curl -s -X DELETE -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/runs/$RUN_ID"
+          done
