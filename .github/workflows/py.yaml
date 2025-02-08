@@ -30,11 +30,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
-
-      - name: 安装依赖
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
       
       - name: 下载 JSON 数据
         run: curl -s --compressed "${{ env.JSON_URL }}" -o 9280.json
@@ -42,7 +37,7 @@ jobs:
       - name: 提取并处理 Spider 内容
         id: spider
         run: |
-          SPIDER_CONTENT=$(jq -r '.spider // "" | gsub("\n"; "\\n")' 9280.json)
+          SPIDER_CONTENT=$(./bin/jq -r '.spider // "" | gsub("\n"; "\\n")' 9280.json)
           echo "SPIDER_CONTENT=$SPIDER_CONTENT" >> $GITHUB_ENV
 
       - name: 获取历史 Spider
@@ -53,7 +48,7 @@ jobs:
           RESP=$(curl -sf -H "Authorization: Bearer $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/releases/latest")
 
-          PREVIOUS_SPIDER=$(jq -r '
+          PREVIOUS_SPIDER=$(./bin/jq -r '
             if .message == "Not Found" then
               "no_history"
             else
@@ -80,37 +75,43 @@ jobs:
 
           # 配置映射
           NAME_MAPPING = {
-               "Doubana", #⬇️【网盘类先扫码】⬇️
-              "Wexconfig", #🐮通用类型┃配置中心🐮
-              "Wexalllive", #💓‍聚合┃直播💓
-              "mingriyingshi", #😁明日┃影视😁
-              "Fujutv", #😁腐剧┃影视😁
-              "Wexsaohuo", #🎇火火┃秒播🎇
-              "csp_Nmys", #🎇伯伯┃秒播🎇
+              "Douban": "🐮【推荐】🐮",
+              "Wexokconfig": "🐮配置中心🐮",
+              "Wexnullname": "💓观影┃4K💓"
+          }
+          PRIORITY_MAP = {"Douban": 1, "Wexokconfig": 2, "玩偶": 3}
+          KEYS_TO_DELETE = [
+              "Doubana",#⬇️【网盘类先扫码】⬇️
+              "Wexconfig",#🐮通用类型┃配置中心🐮
+              "Wexalllive",#💓‍聚合┃直播💓
+              "mingriyingshi",#😁明日┃影视😁
+              "Fujutv",#😁腐剧┃影视😁
+              "Wexsaohuo",#🎇火火┃秒播🎇
+              "csp_Nmys",#🎇伯伯┃秒播🎇
               "非凡","木耳", 
               "360", "爱坤", 
               "新6V",
-              "Wexhanxiaoquan", #🌺韩圈┃秒播🌺
-              "Wexduanjuquark", #🍉短剧┃夸克🍉
-              "Wexduanjuvop", #🍉短剧┃秒播🍉
-              "Wexduanjuhema", #🍉短剧┃仙品🍉
-              "WexduanjuvmpGuard", #🍉短剧┃帝品🍉
-              "WexduanjuvipGuard", #🍉短剧┃神品🍉
-              "Wexduanju001", #🍉短剧┃极品🍉
-              "Wexliyuan", #🎎戏曲┃秒播🎎
-              "Wextangdou", #💃跳舞┃教学💃
-              "Wexergeduoduo", #👼多多┃儿歌👼
-              "Wexbaobaobashi", #👼宝宝┃儿歌👼
-              "Wexbeiwa", #👼贝贝┃儿歌👼
-              "Wextuxiaobei", #👼兔兔┃儿歌👼
-              "Pandalivetv", #😍韩国┃直播😍
+              "Wexhanxiaoquan",#🌺韩圈┃秒播🌺
+              "Wexduanjuquark",#🍉短剧┃夸克🍉
+              "Wexduanjuvop",#🍉短剧┃秒播🍉
+              "Wexduanjuhema",#🍉短剧┃仙品🍉
+              "WexduanjuvmpGuard",#🍉短剧┃帝品🍉
+              "WexduanjuvipGuard",#🍉短剧┃神品🍉
+              "Wexduanju001",#🍉短剧┃极品🍉
+              "Wexliyuan",#🎎戏曲┃秒播🎎
+              "Wextangdou",#💃跳舞┃教学💃
+              "Wexergeduoduo",#👼多多┃儿歌👼
+              "Wexbaobaobashi",#👼宝宝┃儿歌👼
+              "Wexbeiwa",#👼贝贝┃儿歌👼
+              "Wextuxiaobei",#👼兔兔┃儿歌👼
+              "Pandalivetv",#😍韩国┃直播😍
               "Iktv", "自定义", 
               "AList","bili",
-              "biliych", #🅱哔哔┃歌曲🅱
-              "Wexqingfengdj", #🎼舞曲┃摇头🎼
-              "Wexxsmp3", #🎤随身┃相声🎤
-              "Wexpsmp3", #🎤随身┃评书🎤
-              "Wexwwe", #🌐格斗┃WWE🌐
+              "biliych",#🅱哔哔┃歌曲🅱
+              "Wexqingfengdj",#🎼舞曲┃摇头🎼
+              "Wexxsmp3",#🎤随身┃相声🎤
+              "Wexpsmp3",#🎤随身┃评书🎤
+              "Wexwwe",#🌐格斗┃WWE🌐
               "看球", 
               "926看球", 
               "1直播",
@@ -171,6 +172,6 @@ jobs:
           RUNS=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runs?per_page=100")
           
-          jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[50:][] | .id' <<< "$RUNS" | \
+          ./bin/jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[100:][] | .id' <<< "$RUNS" | \
             xargs -I{} curl -sf -X DELETE -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runs/{}"
