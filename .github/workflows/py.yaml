@@ -80,13 +80,7 @@ jobs:
 
           # 配置映射
           NAME_MAPPING = {
-              "Douban": "🐮【推荐】🐮",
-              "Wexokconfig": "🐮配置中心🐮",
-              "Wexnullname": "💓观影┃4K💓"
-          }
-          PRIORITY_MAP = {"Douban": 1, "Wexokconfig": 2, "玩偶": 3}
-          KEYS_TO_DELETE = [
-              "Doubana", #⬇️【网盘类先扫码】⬇️
+               "Doubana", #⬇️【网盘类先扫码】⬇️
               "Wexconfig", #🐮通用类型┃配置中心🐮
               "Wexalllive", #💓‍聚合┃直播💓
               "mingriyingshi", #😁明日┃影视😁
@@ -95,6 +89,7 @@ jobs:
               "csp_Nmys", #🎇伯伯┃秒播🎇
               "非凡","木耳", 
               "360", "爱坤", 
+              "新6V",
               "Wexhanxiaoquan", #🌺韩圈┃秒播🌺
               "Wexduanjuquark", #🍉短剧┃夸克🍉
               "Wexduanjuvop", #🍉短剧┃秒播🍉
