@@ -6,7 +6,7 @@ on:
       - wex
   workflow_dispatch:
   schedule:
-    - cron: '*/8 * * * *'
+    - cron: '*/60 * * * *'
 
 env:
   JSON_URL: "https://9280.kstore.space/wex.json"
@@ -19,7 +19,7 @@ jobs:
       - name: 检出仓库
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # 获取完整提交历史
 
       - name: 设置 Python
         uses: actions/setup-python@v4
@@ -29,22 +29,38 @@ jobs:
       - name: 安装依赖
         run: |
           sudo apt-get install -y jq
-      
-      - name: 下载 JSON 数据（强制更新）
+          pip install requests
+
+      - name: 下载 JSON 数据
         run: |
-          # 添加时间戳参数绕过缓存
-          curl -f -s -H 'Cache-Control: no-cache, no-store' \
-            "${{ env.JSON_URL }}?ts=$(date +%s)" -o 9280.json || {
-            echo "::error::下载 JSON 失败"
-            exit 1
+          python3 <<EOF
+          import requests
+
+          headers = {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+              "Accept": "application/json, text/plain, */*",
+              "Accept-Language": "en-US,en;q=0.9",
+              "Accept-Encoding": "gzip, deflate, br",
+              "Connection": "keep-alive",
+              "Referer": "https://example.com/",
+              "Sec-Fetch-Dest": "empty",
+              "Sec-Fetch-Mode": "cors",
+              "Sec-Fetch-Site": "same-origin"
           }
 
+          response = requests.get("${{ env.JSON_URL }}", headers=headers, stream=True)
+          response.raise_for_status()
+
+          with open("9280.json", "wb") as f:
+              for chunk in response.iter_content(chunk_size=8192):
+                  f.write(chunk)
+          EOF
+          
       - name: 提取并处理 Spider 内容
         id: spider
         run: |
           SPIDER_CONTENT=$(jq -r '.spider // "" | gsub("\n"; "\\n")' 9280.json)
-          echo "提取的 Spider 长度: ${#SPIDER_CONTENT}"
-          echo "SPIDER_CONTENT=${SPIDER_CONTENT:0:50}..." >> $GITHUB_ENV
+          echo "SPIDER_CONTENT=$SPIDER_CONTENT" >> $GITHUB_ENV
 
       - name: 获取历史 Spider
         id: history
@@ -52,10 +68,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT }}
         run: |
           RESP=$(curl -sf -H "Authorization: Bearer $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/latest" || echo '{"message": "Not Found"}')
+            "https://api.github.com/repos/${{ github.repository }}/releases/latest")
 
-          echo "API 响应: $RESP"
-          
           PREVIOUS_SPIDER=$(jq -r '
             if .message == "Not Found" then
               "no_history"
@@ -64,20 +78,14 @@ jobs:
             end
           ' <<< "$RESP")
 
-          echo "历史 Spider 长度: ${#PREVIOUS_SPIDER}"
-          echo "PREVIOUS_SPIDER=${PREVIOUS_SPIDER:0:50}..." >> $GITHUB_ENV
+          echo "PREVIOUS_SPIDER=$PREVIOUS_SPIDER" >> $GITHUB_ENV
 
       - name: 对比内容
         id: comparator
         run: |
-          echo "当前 Spider（前50）: ${SPIDER_CONTENT:0:50}"
-          echo "历史 Spider（前50）: ${PREVIOUS_SPIDER:0:50}"
-          
           if [[ "$SPIDER_CONTENT" != "$PREVIOUS_SPIDER" ]]; then
-            echo "::notice::检测到内容变化"
             echo "changed=true" >> $GITHUB_OUTPUT
           else
-            echo "::notice::内容未变化"
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
