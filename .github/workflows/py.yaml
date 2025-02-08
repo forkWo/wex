@@ -32,7 +32,8 @@ jobs:
       
       - name: 下载 JSON 数据
         run: |
-          curl -s -H "Cache-Control: no-cache" -H "Pragma: no-cache" "${{ env.JSON_URL }}" -o 9280.json
+          sudo apt-get install -y wget
+          wget --no-cache -O 9280.json "${{ env.JSON_URL }}"
       
       - name: 调试 JSON 内容
         run: |
