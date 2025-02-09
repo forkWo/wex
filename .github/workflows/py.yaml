@@ -17,7 +17,9 @@ jobs:
     steps:
       - name: 检出仓库
         uses: actions/checkout@v4
- 
+        with:
+          fetch-depth: 0  # 获取完整提交历史
+
       - name: 设置 Python
         uses: actions/setup-python@v4
         with:
@@ -31,6 +33,10 @@ jobs:
         run: |
           sudo apt-get install -y wget
           wget --no-cache -O 9280.json "https://9280.kstore.space/wex.json"
+      
+      - name: 调试 JSON 内容
+        run: |
+          head -n 10 9280.json
 
       - name: 提取并处理 Spider 内容
         id: spider
@@ -162,7 +168,6 @@ jobs:
             --title "$(date +%F)" \
             --notes "Spider Content: $SPIDER_CONTENT" \
             9280.json \
-            "${{ env.FINAL_JSON }}" \
             --target ${{ github.sha }}
 
       - name: 清理历史
@@ -172,6 +177,6 @@ jobs:
           RUNS=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runs?per_page=100")
           
-          jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[1:][] | .id' <<< "$RUNS" | \
+          jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[24:][] | .id' <<< "$RUNS" | \
             xargs -I{} curl -sf -X DELETE -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runs/{}"
