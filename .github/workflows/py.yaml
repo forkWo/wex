@@ -34,10 +34,6 @@ jobs:
           sudo apt-get install -y wget
           wget --no-cache -O 9280.json "https://9280.kstore.space/wex.json"
       
-      - name: 调试 JSON 内容
-        run: |
-          head -n 10 9280.json
-
       - name: 提取并处理 Spider 内容
         id: spider
         run: |
